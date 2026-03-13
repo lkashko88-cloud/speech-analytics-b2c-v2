@@ -25,7 +25,7 @@ const CLIENT_SEGMENTS = {
   type: ['Новый клиент', 'Текущий клиент'],
   gender: ['Мужчина', 'Женщина'],
   age: ['18-25', '26-35', '36-45', '46-55', '55+'],
-  tariff: ['Без тарифа', 'Базовый', 'Оптимальный', 'Премиум'],
+  traffic: ['До 50 ГБ', '50-200 ГБ', '200-500 ГБ', '500+ ГБ'],
   housing: ['Квартира', 'Частный дом'],
   devices: ['1-2 устройства', '3-5 устройств', '6+ устройств'],
 };
@@ -137,7 +137,7 @@ function generateCallData() {
           type: randChoice(CLIENT_SEGMENTS.type),
           gender: randChoice(CLIENT_SEGMENTS.gender),
           age: randChoice(CLIENT_SEGMENTS.age),
-          tariff: randChoice(CLIENT_SEGMENTS.tariff),
+          traffic: randChoice(CLIENT_SEGMENTS.traffic),
           housing: randChoice(CLIENT_SEGMENTS.housing),
           devices: randChoice(CLIENT_SEGMENTS.devices),
         };
