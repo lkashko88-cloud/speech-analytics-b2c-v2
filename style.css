@@ -5,9 +5,9 @@
   /* Colors */
   --bg: #f7f8fa;
   --bg-card: #ffffff;
-  --bg-sidebar: #1a1d23;
-  --bg-sidebar-hover: #262a33;
-  --bg-sidebar-active: #2d323d;
+  --bg-sidebar: #001e52;
+  --bg-sidebar-hover: #002a6e;
+  --bg-sidebar-active: #003288;
 
   --text-primary: #1a1d23;
   --text-secondary: #6b7280;
@@ -85,36 +85,22 @@ body {
 
 /* ── Sidebar ────────────────────────────────────────────────────────── */
 .sidebar-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   padding: 4px 8px;
-  margin-bottom: 28px;
+  margin-bottom: 8px;
 }
 
-.sidebar-logo-icon {
-  width: 36px;
-  height: 36px;
-  background: var(--accent);
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
+.sidebar-logo-img {
+  width: 180px;
+  height: auto;
 }
 
-.sidebar-logo-text {
-  font-weight: 600;
-  font-size: 15px;
-  color: #fff;
-  line-height: 1.2;
-}
-
-.sidebar-logo-text span {
-  display: block;
+.sidebar-logo-sub {
   font-size: 11px;
-  font-weight: 400;
-  color: var(--text-sidebar);
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  padding: 0 12px;
+  margin-bottom: 20px;
+  letter-spacing: 0.5px;
 }
 
 .sidebar-section {
@@ -126,7 +112,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1.2px;
-  color: #4b5563;
+  color: rgba(255,255,255,0.35);
   padding: 0 12px;
   margin-bottom: 6px;
 }
@@ -165,7 +151,7 @@ body {
 
 .sidebar-divider {
   height: 1px;
-  background: #2d323d;
+  background: #003d99;
   margin: 16px 8px;
 }
 
@@ -173,7 +159,7 @@ body {
   margin-top: auto;
   padding: 12px;
   font-size: 11px;
-  color: #4b5563;
+  color: rgba(255,255,255,0.3);
   text-align: center;
 }
 
@@ -202,7 +188,7 @@ body {
 .period-selector {
   display: flex;
   background: var(--bg-sidebar-hover);
-  border: 1px solid #374151;
+  border: 1px solid #003d99;
   border-radius: var(--radius);
   padding: 3px;
   gap: 2px;
@@ -719,7 +705,7 @@ body {
   width: 100%;
   padding: 8px 12px;
   background: var(--bg-sidebar-hover);
-  border: 1px solid #374151;
+  border: 1px solid #003d99;
   border-radius: var(--radius-sm);
   color: #fff;
   font-family: 'Outfit', sans-serif;
