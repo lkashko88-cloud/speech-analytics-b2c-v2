@@ -25,9 +25,9 @@ const CLIENT_SEGMENTS = {
   type: ['Новый клиент', 'Текущий клиент'],
   gender: ['Мужчина', 'Женщина'],
   age: ['18-25', '26-35', '36-45', '46-55', '55+'],
-  hasCar: ['Есть авто', 'Нет авто'],
+  tariff: ['Без тарифа', 'Базовый', 'Оптимальный', 'Премиум'],
   housing: ['Квартира', 'Частный дом'],
-  income: ['Средний', 'Выше среднего', 'Высокий'],
+  devices: ['1-2 устройства', '3-5 устройств', '6+ устройств'],
 };
 
 const SUCCESS_LABELS = ['Отлично', 'Хорошо', 'Частично', 'Неуспешно'];
@@ -137,9 +137,9 @@ function generateCallData() {
           type: randChoice(CLIENT_SEGMENTS.type),
           gender: randChoice(CLIENT_SEGMENTS.gender),
           age: randChoice(CLIENT_SEGMENTS.age),
-          hasCar: randChoice(CLIENT_SEGMENTS.hasCar),
+          tariff: randChoice(CLIENT_SEGMENTS.tariff),
           housing: randChoice(CLIENT_SEGMENTS.housing),
-          income: randChoice(CLIENT_SEGMENTS.income),
+          devices: randChoice(CLIENT_SEGMENTS.devices),
         };
 
         const product = randChoice(PRODUCTS);
