@@ -210,7 +210,7 @@ function renderOverview() {
     { x: dates, y: avgConvs, name: 'Конверсия', yaxis: 'y2', type: 'bar', marker: { color: 'rgba(16,185,129,0.3)' } },
   ], {
     margin: { t: 10, b: 30, l: 50, r: 50 }, height: 320, font: plotlyFont,
-    yaxis: { title: 'Оценка', range: [1, 5] },
+    yaxis: { title: 'Оценка', range: [2.5, 5], dtick: 0.5 },
     yaxis2: { title: 'Конверсия', overlaying: 'y', side: 'right', tickformat: '.0%' },
     legend: { orientation: 'h', y: -0.12 },
   }, plotlyConfig);
@@ -782,7 +782,7 @@ function renderPersonal() {
       { x: opWeekly.map(w => w.date), y: opWeekly.map(w => w.conversion), name: 'Конверсия', yaxis: 'y2', type: 'bar', marker: { color: 'rgba(16,185,129,0.4)' } },
     ], {
       margin: { t: 10, b: 30, l: 50, r: 50 }, height: 320, font: plotlyFont,
-      yaxis: { title: 'Оценка', range: [1, 5] },
+      yaxis: { title: 'Оценка', range: [2.5, 5], dtick: 0.5 },
       yaxis2: { title: 'Конверсия', overlaying: 'y', side: 'right', tickformat: '.0%' },
       legend: { orientation: 'h', y: -0.15 },
     }, plotlyConfig);

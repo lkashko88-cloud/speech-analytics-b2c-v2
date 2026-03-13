@@ -147,6 +147,13 @@ body {
   text-align: center;
   font-size: 15px;
   flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.7);
+}
+.sidebar-item.active .sidebar-item-icon {
+  color: #ffffff;
 }
 
 .sidebar-divider {
