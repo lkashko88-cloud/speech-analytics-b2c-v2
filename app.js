@@ -424,17 +424,8 @@ function renderImpact() {
     </table>`;
 
   // ── Client Profile → Personalized Script ─────────────────────────
-  const segmentAnalysis = analyzeClientSegments(targeted);
-  document.getElementById('impact-client-profile').innerHTML = `
-    <div class="alert-box success" style="margin-bottom:16px;">
-      <span class="alert-icon">🧠</span>
-      <div>
-        <div class="alert-title">Идея: персональный скрипт по профилю клиента</div>
-        <div class="alert-text">Чем больше мы знаем о клиенте до звонка — тем точнее скрипт. Ниже: конверсия по сегментам и рекомендации по адаптации скрипта.</div>
-      </div>
-    </div>
-    <div class="profile-grid">${segmentAnalysis}</div>
-  `;
+  const profileData = buildClientProfile(targeted);
+  document.getElementById('impact-client-profile').innerHTML = profileData;
 }
 
 function calcConvForQa(targeted, min, max) {
@@ -442,17 +433,34 @@ function calcConvForQa(targeted, min, max) {
   return filtered.length ? filtered.filter(c => c.converted).length / filtered.length : 0;
 }
 
-function analyzeClientSegments(targeted) {
+function buildClientProfile(targeted) {
   const dims = [
-    { key: 'type', label: 'Тип клиента', tips: { 'Новый клиент': 'Акцент на выгодах подключения, пробный период', 'Текущий клиент': 'Апгрейд текущего тарифа, лояльность' } },
-    { key: 'gender', label: 'Пол', tips: { 'Мужчина': 'Технические характеристики, скорость, цифры', 'Женщина': 'Удобство для семьи, стабильность, поддержка' } },
-    { key: 'age', label: 'Возраст', tips: { '18-25': 'Мобильность, стриминг, скорость', '26-35': 'Семья, работа из дома', '36-45': 'Надёжность, поддержка, ТВ', '46-55': 'Простота, ТВ, цена', '55+': 'Простые тарифы, помощь с настройкой' } },
-    { key: 'hasCar', label: 'Авто', tips: { 'Есть авто': 'Мобильный интернет, навигация, роутер в авто', 'Нет авто': 'Домашний интернет, стационарный тариф' } },
-    { key: 'housing', label: 'Жильё', tips: { 'Квартира': 'МКД-тарифы, общий доступ', 'Частный дом': 'ЧС-тарифы, индивидуальное подключение' } },
-    { key: 'income', label: 'Доход', tips: { 'Средний': 'Базовые тарифы, выгода', 'Выше среднего': 'Расширенные пакеты', 'Высокий': 'Премиум, максимальная скорость' } },
+    { key: 'type', label: 'Тип клиента', icon: '👤', tips: { 'Новый клиент': 'Акцент на выгодах подключения, пробный период', 'Текущий клиент': 'Апгрейд текущего тарифа, лояльность' },
+      scripts: { 'Новый клиент': ['«Специально для новых клиентов — первый месяц бесплатно»', '«Подключение за 24 часа, бесплатный выезд мастера»', '«Расскажу про тариф, который идеально подойдёт под ваши задачи»'],
+                 'Текущий клиент': ['«Как постоянному клиенту — скидка 15% на расширение»', '«Вижу, что у вас базовый тариф — могу предложить лучше по той же цене»', '«Хочу убедиться, что вы получаете максимум от подключения»'] }},
+    { key: 'gender', label: 'Пол', icon: '⚡', tips: { 'Мужчина': 'Технические характеристики, скорость, цифры', 'Женщина': 'Удобство для семьи, стабильность, поддержка' },
+      scripts: { 'Мужчина': ['«Скорость до 500 Мбит/с — фильм за 2 минуты»', '«Пинг до 5мс — идеально для онлайн-игр»', '«Роутер с поддержкой Wi-Fi 6 в комплекте»'],
+                 'Женщина': ['«Стабильный интернет для всей семьи — до 10 устройств»', '«Бесплатная поддержка 24/7, поможем с настройкой»', '«Детский контент и безопасный интернет включены»'] }},
+    { key: 'age', label: 'Возраст', icon: '🎂', tips: { '18-25': 'Мобильность, стриминг, скорость', '26-35': 'Семья, работа из дома', '36-45': 'Надёжность, поддержка, ТВ', '46-55': 'Простота, ТВ, цена', '55+': 'Простые тарифы, помощь с настройкой' },
+      scripts: { '18-25': ['«Безлимитный интернет + подписка на Movix в подарок»', '«Стриминг, игры, соцсети — всё летает»'],
+                 '26-35': ['«Работаете из дома? Стабильный канал для видеозвонков»', '«Подключите семейный тариф — выгоднее на 20%»'],
+                 '36-45': ['«Цифровое ТВ + интернет в одном пакете — удобно и выгодно»', '«Надёжное подключение без перебоев»'],
+                 '46-55': ['«Простой тариф без скрытых платежей»', '«200+ каналов ТВ — спорт, кино, новости»'],
+                 '55+': ['«Поможем настроить всё за один визит мастера»', '«Простой пульт для ТВ, понятный интерфейс»'] }},
+    { key: 'housing', label: 'Жильё', icon: '🏠', tips: { 'Квартира': 'МКД-тарифы, общий доступ', 'Частный дом': 'ЧС-тарифы, индивидуальное подключение' },
+      scripts: { 'Квартира': ['«Для вашего дома доступен тариф МКД — оптоволокно в квартиру»', '«Подключаем за 1 день, без сверления стен»'],
+                 'Частный дом': ['«Для частного сектора — индивидуальная линия до дома»', '«Тариф ЧС: стабильный сигнал даже в удалённых районах»'] }},
+    { key: 'income', label: 'Доход', icon: '💰', tips: { 'Средний': 'Базовые тарифы, выгода', 'Выше среднего': 'Расширенные пакеты', 'Высокий': 'Премиум, максимальная скорость' },
+      scripts: { 'Средний': ['«Самый выгодный тариф — максимум за минимальную цену»', '«Акция: первые 3 месяца со скидкой 30%»'],
+                 'Выше среднего': ['«Расширенный пакет: больше каналов, выше скорость»', '«Добавьте мобильную связь — пакет дешевле»'],
+                 'Высокий': ['«Премиум-тариф: максимальная скорость + приоритетная поддержка»', '«Персональный менеджер и гарантия SLA»'] }},
+    { key: 'hasCar', label: 'Авто', icon: '🚗', tips: { 'Есть авто': 'Мобильный интернет, навигация', 'Нет авто': 'Домашний интернет' },
+      scripts: { 'Есть авто': ['«Мобильный роутер для авто — интернет в дороге»'],
+                 'Нет авто': ['«Домашний тариф с максимальной скоростью»'] }},
   ];
 
-  return dims.slice(0, 3).map(dim => {
+  // Analyze all dimensions
+  const allSegments = dims.map(dim => {
     const groups = {};
     targeted.forEach(c => {
       const seg = c.client[dim.key];
@@ -460,18 +468,75 @@ function analyzeClientSegments(targeted) {
       groups[seg].total++;
       if (c.converted) groups[seg].converted++;
     });
-    const best = Object.entries(groups).sort((a, b) => (b[1].converted / b[1].total) - (a[1].converted / a[1].total))[0];
-    const bestConv = best[1].total > 0 ? best[1].converted / best[1].total : 0;
+    const sorted = Object.entries(groups).sort((a, b) => (b[1].converted / b[1].total) - (a[1].converted / a[1].total));
+    return { ...dim, groups, sorted, best: sorted[0], worst: sorted[sorted.length - 1] };
+  });
 
-    return `
-      <div class="profile-card">
-        <div class="profile-segment">${dim.label}</div>
-        <div>Лучший сегмент: <b>${best[0]}</b></div>
-        <div class="profile-conv" style="color:${qaColor(bestConv * 20)}">${fmtPct(bestConv)}</div>
-        <div style="font-size:12px;color:#9ca3af;">конверсия</div>
-        <div class="profile-tip">💡 ${dim.tips[best[0]] || 'Адаптировать скрипт'}</div>
+  // Build "ideal client portrait" from best segments
+  const portraitConvs = allSegments.map(s => s.best[1].total > 0 ? s.best[1].converted / s.best[1].total : 0);
+  const avgPortraitConv = avg(portraitConvs);
+  const overallConv = targeted.length ? targeted.filter(c => c.converted).length / targeted.length : 0;
+
+  // Segment cards (all 6)
+  const segCards = allSegments.map(dim => {
+    const bestConv = dim.best[1].total > 0 ? dim.best[1].converted / dim.best[1].total : 0;
+    const scripts = dim.scripts?.[dim.best[0]] || [];
+
+    // Bar chart for all values in this dimension
+    const bars = dim.sorted.map(([name, data]) => {
+      const conv = data.total > 0 ? data.converted / data.total : 0;
+      const pct = conv / Math.max(...dim.sorted.map(s => s[1].total > 0 ? s[1].converted / s[1].total : 0.01)) * 100;
+      const isBest = name === dim.best[0];
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <div style="width:100px;font-size:12px;color:${isBest ? 'var(--text-primary);font-weight:600' : 'var(--text-secondary)'};text-align:right;flex-shrink:0;">${name}</div>
+        <div style="flex:1;height:20px;background:var(--border-light);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${Math.max(pct, 5)}%;background:${isBest ? '#10b981' : '#4f6ef7'};border-radius:4px;transition:width 400ms;"></div>
+        </div>
+        <div style="width:48px;font-size:12px;font-weight:600;font-family:'JetBrains Mono';color:${isBest ? '#10b981' : 'var(--text-secondary)'};flex-shrink:0;">${fmtPct(conv)}</div>
       </div>`;
-  }).join('');
+    }).join('');
+
+    return `<div class="profile-card" style="padding:18px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:20px;">${dim.icon}</span>
+        <div>
+          <div class="profile-segment">${dim.label}</div>
+          <div style="font-size:11px;color:var(--text-muted);">Лучший: <b style="color:var(--green);">${dim.best[0]}</b> (${fmtPct(bestConv)})</div>
+        </div>
+      </div>
+      ${bars}
+      ${scripts.length ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-light);">
+        <div style="font-size:11px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">Правки в скрипт для «${dim.best[0]}»:</div>
+        ${scripts.map(s => `<div style="font-size:12px;color:var(--text-secondary);padding:3px 0;padding-left:12px;position:relative;">
+          <span style="position:absolute;left:0;color:var(--accent);">→</span> ${s}
+        </div>`).join('')}
+      </div>` : ''}
+    </div>`;
+  });
+
+  return `
+    <div class="alert-box success" style="margin-bottom:16px;">
+      <span class="alert-icon">🧠</span>
+      <div>
+        <div class="alert-title">Идея: персональный скрипт по профилю клиента</div>
+        <div class="alert-text">Зная профиль клиента до звонка, оператор адаптирует скрипт → выше конверсия. Средняя конверсия <b>${fmtPct(overallConv)}</b>, а в лучших сегментах — до <span class="val-green">${fmtPct(Math.max(...portraitConvs))}</span>.</div>
+      </div>
+    </div>
+
+    <div style="background:linear-gradient(135deg, #f0f4ff, #e8f5e9);border:2px solid var(--accent);border-radius:var(--radius);padding:20px;margin-bottom:16px;">
+      <div style="font-weight:700;font-size:15px;margin-bottom:8px;">Портрет идеального клиента</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;">
+        ${allSegments.map(s => `<span class="badge accent" style="font-size:12px;">${s.icon} ${s.best[0]}</span>`).join('')}
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary);">
+        Средняя конверсия по лучшим сегментам: <b style="color:var(--green);">${fmtPct(avgPortraitConv)}</b>
+        (vs общая <b>${fmtPct(overallConv)}</b> — разница <span class="val-green">+${fmtPct(avgPortraitConv - overallConv)}</span>)
+      </div>
+    </div>
+
+    <div class="profile-grid" style="grid-template-columns:repeat(3,1fr);">${segCards.slice(0, 3).join('')}</div>
+    <div class="profile-grid" style="grid-template-columns:repeat(3,1fr);">${segCards.slice(3, 6).join('')}</div>
+  `;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
