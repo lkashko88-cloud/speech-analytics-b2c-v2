@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Речевая аналитика B2C</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+<div class="app">
+  <!-- ── Sidebar ──────────────────────────────────────────────── -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon">📊</div>
+      <div class="sidebar-logo-text">
+        Речевая аналитика
+        <span>B2C Dashboard</span>
+      </div>
+    </div>
+
+    <!-- Period selector in sidebar -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Период</div>
+      <div class="period-selector" style="margin:0 4px;">
+        <button class="period-btn" data-period="7d">7д</button>
+        <button class="period-btn active" data-period="30d">30д</button>
+        <button class="period-btn" data-period="90d">90д</button>
+        <button class="period-btn" data-period="all">Все</button>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Role: ЛПР -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Руководитель</div>
+      <div class="sidebar-item active" data-page="overview">
+        <span class="sidebar-item-icon">📈</span> Обзор
+      </div>
+      <div class="sidebar-item" data-page="executive">
+        <span class="sidebar-item-icon">📊</span> Итоги
+      </div>
+      <div class="sidebar-item" data-page="impact">
+        <span class="sidebar-item-icon">💰</span> Влияние на продажи
+      </div>
+    </div>
+
+    <!-- Role: Супервайзер -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Супервайзер</div>
+      <div class="sidebar-item" data-page="team">
+        <span class="sidebar-item-icon">👥</span> Команда
+      </div>
+      <div class="sidebar-item" data-page="calls">
+        <span class="sidebar-item-icon">📞</span> Анализ звонков
+      </div>
+    </div>
+
+    <!-- Role: Оператор -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Оператор</div>
+      <div class="sidebar-item" data-page="personal">
+        <span class="sidebar-item-icon">🧑‍💼</span> Личный кабинет
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Operator selector -->
+    <div class="sidebar-section">
+      <div class="sidebar-section-label">Оператор / Фильтр</div>
+      <select class="sidebar-select" id="operatorFilter">
+        <option value="all">Все операторы</option>
+      </select>
+    </div>
+
+    <div class="sidebar-footer">
+      Речевая аналитика B2C — MVP v2<br>
+      Powered by LLM · Март 2026
+    </div>
+  </nav>
+
+  <!-- ── Main Content ─────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- ═══ PAGE: OVERVIEW (ЛПР) ═══ -->
+    <section class="page-section active" id="page-overview">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Обзор</div>
+          <div class="page-subtitle">Ключевые показатели речевой аналитики</div>
+        </div>
+      </div>
+      <div class="kpi-grid" id="overview-kpis"></div>
+      <div id="overview-alert"></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Сводка по критериям оценки</div>
+          <div class="card-subtitle">Норма: 3.8</div>
+        </div>
+        <div class="grid-5" id="overview-donuts"></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Успешность звонков</div>
+          <div id="overview-pie" class="chart-container" style="min-height:280px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Распределение оценок</div>
+          <div id="overview-hist" class="chart-container" style="min-height:280px;"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Средние оценки по критериям</div>
+        <div id="overview-radar" class="chart-container" style="min-height:400px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Динамика: оценка и конверсия по неделям</div>
+        <div id="overview-trend" class="chart-container" style="min-height:320px;"></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Сегменты клиентов</div>
+          <div id="overview-clients" class="chart-container" style="min-height:280px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Продукты</div>
+          <div id="overview-products" class="chart-container" style="min-height:280px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: EXECUTIVE (ЛПР) ═══ -->
+    <section class="page-section" id="page-executive">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Итоги для руководителя</div>
+          <div class="page-subtitle">Агрегированный взгляд на эффективность команды</div>
+        </div>
+      </div>
+      <div class="kpi-grid" id="exec-kpis"></div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Воронка продаж</div>
+        <div id="exec-funnel" class="chart-container" style="min-height:280px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Рейтинг операторов</div>
+        <div id="exec-ranking"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Heatmap: проблемные зоны</div>
+        <div id="exec-heatmap" class="chart-container" style="min-height:220px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Ключевые выводы и рекомендации</div>
+        </div>
+        <div id="exec-conclusions"></div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: IMPACT (ЛПР) ═══ -->
+    <section class="page-section" id="page-impact">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Влияние на продажи</div>
+          <div class="page-subtitle">Как качество звонков влияет на выручку</div>
+        </div>
+      </div>
+      <div class="kpi-grid" id="impact-kpis"></div>
+      <div id="impact-alert"></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Главный вывод: качество → деньги</div>
+          <div class="card-subtitle">Каждый балл оценки = рост конверсии</div>
+        </div>
+        <div id="impact-simple" class="chart-container" style="min-height:320px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Потенциал по операторам</div>
+          <div class="card-subtitle">Сколько выручки добавит улучшение качества</div>
+        </div>
+        <div id="impact-operators"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Профиль клиента → персональный скрипт</div>
+          <div class="card-subtitle">Чем лучше знаем клиента — тем выше конверсия</div>
+        </div>
+        <div id="impact-client-profile"></div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: TEAM (Супервайзер) ═══ -->
+    <section class="page-section" id="page-team">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Команда и развитие</div>
+          <div class="page-subtitle">Оценки, фокусы и план развития</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">ТОП-3 фокуса на неделю</div>
+          <div class="card-subtitle">Слабейшие критерии и шаги для улучшения</div>
+        </div>
+        <div class="grid-3" id="team-focus"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Карта компетенций</div>
+          <div class="card-subtitle">Норма: 3.8</div>
+        </div>
+        <div id="team-comp-table"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Профили компетенций</div>
+        <div id="team-radar" class="chart-container" style="min-height:420px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Детализация по критериям</div>
+        <div id="team-bar" class="chart-container" style="min-height:380px;"></div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: CALLS (Супервайзер) ═══ -->
+    <section class="page-section" id="page-calls">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Анализ звонков</div>
+          <div class="page-subtitle">Детальный разбор звонков операторов</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Выберите звонок</div>
+        <select class="sidebar-select" id="callSelector" style="background:#f7f8fa;color:#1a1d23;border-color:#e5e7eb;margin-bottom:12px;"></select>
+        <div id="call-detail"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Последние звонки</div>
+        <div id="calls-table" style="max-height:400px;overflow-y:auto;"></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Конверсия по сегментам клиентов</div>
+          <div id="calls-segments" class="chart-container" style="min-height:300px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Конверсия по продуктам</div>
+          <div id="calls-products" class="chart-container" style="min-height:300px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ PAGE: PERSONAL (Оператор) ═══ -->
+    <section class="page-section" id="page-personal">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Личный кабинет</div>
+          <div class="page-subtitle" id="personal-subtitle">Персональная аналитика</div>
+        </div>
+      </div>
+      <div class="kpi-grid" id="personal-kpis"></div>
+      <div id="personal-alert"></div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Профиль компетенций</div>
+          <div id="personal-radar" class="chart-container" style="min-height:380px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:12px;">Оценки по компонентам</div>
+          <div id="personal-bars"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">Динамика по неделям</div>
+        <div id="personal-trend" class="chart-container" style="min-height:320px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Персональные рекомендации</div>
+          <div class="card-subtitle">На основе анализа звонков</div>
+        </div>
+        <div id="personal-recs"></div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
