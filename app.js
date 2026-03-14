@@ -862,21 +862,55 @@ function renderRealCalls() {
   sel.onchange = () => renderRealCallDetail(calls.find(c => c.id === +sel.value));
   renderRealCallDetail(calls[0]);
 
-  // Table
+  // Table — simplified with insights
   const sorted = [...calls].sort((a, b) => b.avgScore - a.avgScore);
+
+  function topWeak(scores) {
+    return criteriaKeys
+      .map((k, i) => ({ name: criteriaNames[i], score: scores[k] }))
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 2);
+  }
+  function topStrong(scores) {
+    return criteriaKeys
+      .map((k, i) => ({ name: criteriaNames[i], score: scores[k] }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 2);
+  }
+
   document.getElementById('real-calls-table').innerHTML = `
+    <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">Нажмите на строку, чтобы открыть детали и диалог</div>
     <table class="data-table"><thead><tr>
-      <th>#</th><th>Оператор</th><th>Линия</th><th>Длит.</th><th>Контакт</th><th>Потр.</th><th>Презент.</th><th>Возр.</th><th>Заверш.</th><th>Модули</th><th>Грамот.</th><th>Тон</th><th>Актив.</th><th>Слуш.</th><th>Среднее</th><th>Статус</th>
+      <th style="width:30px;">#</th>
+      <th>Оператор</th>
+      <th>Линия</th>
+      <th>Длит.</th>
+      <th>Оценка</th>
+      <th>Статус</th>
+      <th style="min-width:180px;">Над чем работать</th>
+      <th style="min-width:180px;">Сильные стороны</th>
     </tr></thead><tbody>
-    ${sorted.map((c, i) => `<tr style="cursor:pointer;" onclick="document.getElementById('realCallSelector').value='${c.id}';renderRealCallDetail(REAL_CALLS.find(x=>x.id===${c.id}));document.getElementById('real-call-detail').scrollIntoView({behavior:'smooth'});">
-      <td>${i + 1}</td>
+    ${sorted.map((c, i) => {
+      const weak = topWeak(c.scores);
+      const strong = topStrong(c.scores);
+      return `<tr style="cursor:pointer;" onclick="document.getElementById('realCallSelector').value='${c.id}';renderRealCallDetail(REAL_CALLS.find(x=>x.id===${c.id}));document.getElementById('real-call-detail').scrollIntoView({behavior:'smooth'});">
+      <td style="color:var(--text-muted);">${i + 1}</td>
       <td style="font-weight:500;">${c.operator}</td>
       <td><span class="badge accent">${c.line}</span></td>
-      <td>${Math.floor(c.duration / 60)}:${String(c.duration % 60).padStart(2, '0')}</td>
-      ${criteriaKeys.map(k => `<td style="color:${qaColor(c.scores[k])};font-weight:600;font-family:'JetBrains Mono';">${c.scores[k].toFixed(1)}</td>`).join('')}
-      <td style="font-weight:700;color:${qaColor(c.avgScore)};font-family:'JetBrains Mono';">${c.avgScore.toFixed(2)}</td>
+      <td style="font-family:'JetBrains Mono';font-size:12px;">${Math.floor(c.duration / 60)}:${String(c.duration % 60).padStart(2, '0')}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="width:50px;height:6px;background:var(--border-light);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;width:${c.avgScore/5*100}%;background:${qaColor(c.avgScore)};border-radius:3px;"></div>
+          </div>
+          <span style="font-weight:700;color:${qaColor(c.avgScore)};font-family:'JetBrains Mono';font-size:13px;">${c.avgScore.toFixed(2)}</span>
+        </div>
+      </td>
       <td><span class="badge ${c.success === 'Отлично' || c.success === 'Хорошо' ? 'green' : c.success === 'Частично' ? 'yellow' : 'red'}">${c.success}</span></td>
-    </tr>`).join('')}
+      <td style="font-size:12px;">${weak.map(w => `<span style="color:#ef4444;">${w.name}</span> <span style="font-family:'JetBrains Mono';color:var(--text-muted);">${w.score.toFixed(1)}</span>`).join(' · ')}</td>
+      <td style="font-size:12px;">${strong.map(w => `<span style="color:#10b981;">${w.name}</span> <span style="font-family:'JetBrains Mono';color:var(--text-muted);">${w.score.toFixed(1)}</span>`).join(' · ')}</td>
+    </tr>`;
+    }).join('')}
     </tbody></table>`;
 }
 
