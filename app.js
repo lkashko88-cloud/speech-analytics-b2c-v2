@@ -717,26 +717,27 @@ function renderRealCalls() {
   const aboveNorm = calls.filter(c => c.avgScore >= 3.8).length;
 
   // KPIs
+  const pctAbove = aboveNorm / calls.length;
   document.getElementById('real-kpis').innerHTML = `
     <div class="kpi-card">
-      <div class="kpi-label">Звонков</div>
+      <div class="kpi-label">Проанализировано звонков</div>
       <div class="kpi-value">${calls.length}</div>
-      <div class="kpi-sub">10.02.2026</div>
+      <div class="kpi-sub">ОКЦ · НТП · ССК · 10.02.2026</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Ср. оценка</div>
+      <div class="kpi-label">Ср. оценка качества ${tip('Среднее по 10 критериям (шкала 1-5). Норма: 3.8. Ниже — нужна работа над навыками')}</div>
       <div class="kpi-value" style="color:${qaColor(avgAll)}">${fmt(avgAll, 2)}</div>
-      <div class="kpi-sub">из 5.0</div>
+      <div class="kpi-sub">${avgAll >= 3.8 ? 'Выше нормы' : 'Ниже нормы 3.8 — есть потенциал роста'}</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Выше нормы (3.8)</div>
-      <div class="kpi-value ${aboveNorm / calls.length > 0.5 ? 'green' : ''}" style="color:${aboveNorm / calls.length > 0.5 ? '#10b981' : '#ef4444'}">${aboveNorm} из ${calls.length}</div>
-      <div class="kpi-sub">${fmtPct(aboveNorm / calls.length)}</div>
+      <div class="kpi-label">Достигли нормы ${tip('Звонки со средней оценкой ≥ 3.8 из 5.0. Чем больше — тем лучше')}</div>
+      <div class="kpi-value" style="color:${pctAbove >= 0.5 ? '#10b981' : '#ef4444'}">${aboveNorm} из ${calls.length}</div>
+      <div class="kpi-sub">${fmtPct(pctAbove)} — ${pctAbove >= 0.5 ? 'хороший показатель' : 'большинство звонков ниже нормы'}</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Лучший результат</div>
       <div class="kpi-value green">${fmt(best.avgScore, 2)}</div>
-      <div class="kpi-sub">${best.operator}</div>
+      <div class="kpi-sub">${best.operator} · ${best.line}</div>
     </div>`;
 
   // Criteria bar chart
