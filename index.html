@@ -280,17 +280,17 @@
       </div>
       <div class="card">
         <div class="card-header">
-          <div class="card-title">Выберите звонок</div>
-        </div>
-        <select class="sidebar-select" id="realCallSelector" style="background:#f7f8fa;color:#1a1d23;border-color:#e5e7eb;margin-bottom:12px;"></select>
-        <div id="real-call-detail"></div>
-      </div>
-      <div class="card">
-        <div class="card-header">
           <div class="card-title">Все звонки</div>
-          <div class="card-subtitle">Сортировка по средней оценке</div>
+          <div class="card-subtitle">Сортировка по средней оценке · нажмите на строку для детализации</div>
         </div>
         <div id="real-calls-table" style="max-height:500px;overflow-y:auto;"></div>
+      </div>
+      <div class="card" id="real-call-card" style="display:none;">
+        <div class="card-header">
+          <div class="card-title">Детализация звонка</div>
+        </div>
+        <select class="sidebar-select" id="realCallSelector" style="display:none;"></select>
+        <div id="real-call-detail"></div>
       </div>
     </section>
 

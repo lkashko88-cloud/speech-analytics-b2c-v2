@@ -855,12 +855,8 @@ function renderRealCalls() {
     </div>
   `;
 
-  // Call selector
-  const sel = document.getElementById('realCallSelector');
-  sel.innerHTML = calls.sort((a, b) => b.avgScore - a.avgScore)
-    .map(c => `<option value="${c.id}">${c.operator} · ${c.line} · ${fmt(c.avgScore, 2)} · ${c.success}</option>`).join('');
-  sel.onchange = () => renderRealCallDetail(calls.find(c => c.id === +sel.value));
-  renderRealCallDetail(calls[0]);
+  // Hide detail card until a row is clicked
+  document.getElementById('real-call-card').style.display = 'none';
 
   // Table — simplified with insights
   const sorted = [...calls].sort((a, b) => b.avgScore - a.avgScore);
@@ -893,7 +889,7 @@ function renderRealCalls() {
     ${sorted.map((c, i) => {
       const weak = topWeak(c.scores);
       const strong = topStrong(c.scores);
-      return `<tr style="cursor:pointer;" onclick="document.getElementById('realCallSelector').value='${c.id}';renderRealCallDetail(REAL_CALLS.find(x=>x.id===${c.id}));document.getElementById('real-call-detail').scrollIntoView({behavior:'smooth'});">
+      return `<tr style="cursor:pointer;" onclick="document.getElementById('real-call-card').style.display='block';renderRealCallDetail(REAL_CALLS.find(x=>x.id===${c.id}));document.getElementById('real-call-card').scrollIntoView({behavior:'smooth'});">
       <td style="color:var(--text-muted);">${i + 1}</td>
       <td style="font-weight:500;">${c.operator}</td>
       <td><span class="badge accent">${c.line}</span></td>
