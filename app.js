@@ -62,6 +62,7 @@ function fmt(n, d = 1) { return n.toFixed(d); }
 function fmtPct(n) { return (n * 100).toFixed(1) + '%'; }
 function fmtMoney(n) { return n.toLocaleString('ru-RU') + ' ₽'; }
 function tip(text) { return `<span class="tooltip-icon" data-tip="${text}">?</span>`; }
+function qualityLabel(s) { return { 'Отлично': 'Высокое', 'Хорошо': 'Среднее', 'Частично': 'Ниже среднего', 'Неуспешно': 'Низкое' }[s] || s; }
 
 function pearsonCorr(x, y) {
   const n = x.length;
@@ -882,7 +883,7 @@ function renderRealCalls() {
       <th>Линия</th>
       <th>Длит.</th>
       <th>Оценка</th>
-      <th>Статус</th>
+      <th>Качество ${tip('Оценка качества звонка: ≥4.2 Высокое · ≥3.5 Среднее · ≥2.8 Ниже среднего · <2.8 Низкое')}</th>
       <th style="min-width:180px;">Над чем работать</th>
       <th style="min-width:180px;">Сильные стороны</th>
     </tr></thead><tbody>
@@ -902,7 +903,7 @@ function renderRealCalls() {
           <span style="font-weight:700;color:${qaColor(c.avgScore)};font-family:'JetBrains Mono';font-size:13px;">${c.avgScore.toFixed(2)}</span>
         </div>
       </td>
-      <td><span class="badge ${c.success === 'Отлично' || c.success === 'Хорошо' ? 'green' : c.success === 'Частично' ? 'yellow' : 'red'}">${c.success}</span></td>
+      <td><span class="badge ${c.success === 'Отлично' || c.success === 'Хорошо' ? 'green' : c.success === 'Частично' ? 'yellow' : 'red'}">${qualityLabel(c.success)}</span></td>
       <td><div style="display:flex;gap:4px;flex-wrap:wrap;">${weak.map(w => `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#fef2f2;border:1px solid #fecaca;border-radius:20px;font-size:11px;white-space:nowrap;"><span style="width:18px;height:4px;background:#fecaca;border-radius:2px;overflow:hidden;display:inline-block;"><span style="display:block;height:100%;width:${w.score/5*100}%;background:#ef4444;border-radius:2px;"></span></span><span style="color:#b91c1c;font-weight:500;">${w.name}</span><span style="font-family:'JetBrains Mono';color:#ef4444;font-weight:700;font-size:10px;">${w.score.toFixed(1)}</span></span>`).join('')}</div></td>
       <td><div style="display:flex;gap:4px;flex-wrap:wrap;">${strong.map(w => `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;font-size:11px;white-space:nowrap;"><span style="width:18px;height:4px;background:#bbf7d0;border-radius:2px;overflow:hidden;display:inline-block;"><span style="display:block;height:100%;width:${w.score/5*100}%;background:#10b981;border-radius:2px;"></span></span><span style="color:#166534;font-weight:500;">${w.name}</span><span style="font-family:'JetBrains Mono';color:#10b981;font-weight:700;font-size:10px;">${w.score.toFixed(1)}</span></span>`).join('')}</div></td>
     </tr>`;
@@ -952,7 +953,7 @@ function renderRealCallDetail(call) {
         <span class="badge">${call.line}</span>
         <span class="badge">${call.direction}</span>
         <span class="badge accent">${Math.floor(call.duration / 60)}:${String(call.duration % 60).padStart(2, '0')}</span>
-        <span class="badge ${call.success === 'Отлично' || call.success === 'Хорошо' ? 'green' : call.success === 'Частично' ? 'yellow' : 'red'}">${call.success} · ${call.avgScore.toFixed(2)}</span>
+        <span class="badge ${call.success === 'Отлично' || call.success === 'Хорошо' ? 'green' : call.success === 'Частично' ? 'yellow' : 'red'}">Качество: ${qualityLabel(call.success)} · ${call.avgScore.toFixed(2)}</span>
       </div>
     </div>
     <div class="grid-2" style="margin-bottom:16px;">
