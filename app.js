@@ -760,6 +760,100 @@ function renderRealCalls() {
     legend: { orientation: 'h', y: -0.25 },
   }, plotlyConfig);
 
+  // ── Summary banner ──
+  document.getElementById('real-summary').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:linear-gradient(135deg,#003288 0%,#0050c8 100%);border-radius:12px;margin-bottom:16px;color:#fff;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FBAC00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <div>
+        <div style="font-weight:700;font-size:15px;">Реальные данные пилота</div>
+        <div style="font-size:13px;opacity:0.85;">Источник: транскрибация звонков ОКЦ / НТП / ССК · 10.02.2026 · Персональные данные анонимизированы</div>
+      </div>
+    </div>`;
+
+  // ── Conclusions ──
+  const belowNorm = criteriaKeys
+    .map((k, i) => ({ key: k, name: criteriaNames[i], avg: criteriaAvgs[i] }))
+    .filter(c => c.avg < 3.8)
+    .sort((a, b) => a.avg - b.avg);
+  const aboveNormCriteria = criteriaKeys
+    .map((k, i) => ({ key: k, name: criteriaNames[i], avg: criteriaAvgs[i] }))
+    .filter(c => c.avg >= 3.8)
+    .sort((a, b) => b.avg - a.avg);
+
+  // By line
+  const lineStats = {};
+  calls.forEach(c => {
+    if (!lineStats[c.line]) lineStats[c.line] = [];
+    lineStats[c.line].push(c.avgScore);
+  });
+  const lineRanking = Object.entries(lineStats)
+    .map(([line, scores]) => ({ line, avg: avg(scores), count: scores.length }))
+    .sort((a, b) => b.avg - a.avg);
+
+  document.getElementById('real-conclusions').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+      <div>
+        <div style="font-weight:700;margin-bottom:10px;color:#ef4444;">Проблемные зоны (ниже нормы 3.8)</div>
+        ${belowNorm.map(c => `
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:8px 12px;background:#fef2f2;border-left:3px solid #ef4444;border-radius:0 8px 8px 0;">
+            <div style="font-weight:600;min-width:110px;">${c.name}</div>
+            <div style="flex:1;height:16px;background:#fee2e2;border-radius:4px;overflow:hidden;">
+              <div style="height:100%;width:${c.avg/5*100}%;background:#ef4444;border-radius:4px;"></div>
+            </div>
+            <div style="font-weight:700;font-family:'JetBrains Mono';color:#ef4444;min-width:36px;text-align:right;">${c.avg.toFixed(2)}</div>
+          </div>`).join('')}
+      </div>
+      <div>
+        <div style="font-weight:700;margin-bottom:10px;color:#10b981;">Сильные стороны (выше нормы)</div>
+        ${aboveNormCriteria.map(c => `
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:8px 12px;background:#f0fdf4;border-left:3px solid #10b981;border-radius:0 8px 8px 0;">
+            <div style="font-weight:600;min-width:110px;">${c.name}</div>
+            <div style="flex:1;height:16px;background:#dcfce7;border-radius:4px;overflow:hidden;">
+              <div style="height:100%;width:${c.avg/5*100}%;background:#10b981;border-radius:4px;"></div>
+            </div>
+            <div style="font-weight:700;font-family:'JetBrains Mono';color:#10b981;min-width:36px;text-align:right;">${c.avg.toFixed(2)}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div style="font-weight:700;margin-bottom:10px;">Качество по линиям</div>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+      ${lineRanking.map(l => `
+        <div style="flex:1;min-width:150px;padding:12px 16px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:10px;text-align:center;">
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">${l.line}</div>
+          <div style="font-size:24px;font-weight:700;color:${qaColor(l.avg)};font-family:'JetBrains Mono';">${l.avg.toFixed(2)}</div>
+          <div style="font-size:12px;color:var(--text-muted);">${l.count} звонков</div>
+        </div>`).join('')}
+    </div>
+
+    <div style="font-weight:700;margin-bottom:10px;">Рекомендации</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+      ${belowNorm.slice(0, 3).map((c, i) => {
+        const actions = {
+          'Модули': ['Внедрить чек-лист завершения: итог + следующий шаг + «Остались вопросы?»', 'Контроль: проверять последние 2 минуты звонка'],
+          'Потребности': ['Минимум 3 открытых вопроса до презентации продукта', 'Шаблон: площадь, кол-во устройств, цели использования'],
+          'Завершение': ['Инициировать оформление: «Давайте оформим заявку»', 'Фиксировать дату и время подключения'],
+          'Презентация': ['Связывать тариф с потребностью клиента', 'Называть конкретные выгоды: скорость, каналы, цену'],
+          'Возражения': ['Техника «согласие + аргумент + вопрос»', 'Составить банк ответов на топ-5 возражений'],
+          'Контакт': ['Полное приветствие: имя, компания, готовность помочь', 'Уточнять имя клиента в начале звонка'],
+          'Слушание': ['Перефразировать: «Правильно ли я понимаю...»', 'Пауза 2 сек после ответа клиента'],
+          'Тон': ['Доброжелательный тон без разговорных оборотов', 'Контроль эмоций при негативе от клиента'],
+          'Активность': ['Вести диалог, структурировать этапы', 'Объяснять клиенту логику действий'],
+          'Грамотность': ['Исключить слова-паразиты', 'Использовать профессиональную лексику'],
+        };
+        const tips = actions[c.name] || ['Улучшить навык'];
+        return `
+          <div style="padding:14px;background:var(--yellow-light);border-top:3px solid var(--yellow);border-radius:10px;">
+            <div style="font-weight:700;margin-bottom:4px;">Фокус ${i+1}: ${c.name}</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">Текущий: <span style="color:${qaColor(c.avg)};font-weight:600;">${c.avg.toFixed(2)}</span> → Цель: <span style="color:#10b981;font-weight:600;">3.80</span></div>
+            <ul style="margin:0;padding-left:18px;font-size:13px;">
+              ${tips.map(t => `<li style="margin-bottom:4px;">${t}</li>`).join('')}
+            </ul>
+          </div>`;
+      }).join('')}
+    </div>
+  `;
+
   // Call selector
   const sel = document.getElementById('realCallSelector');
   sel.innerHTML = calls.sort((a, b) => b.avgScore - a.avgScore)
