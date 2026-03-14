@@ -73,7 +73,7 @@ function pearsonCorr(x, y) {
 }
 
 function renderCurrentPage() {
-  const r = { overview: renderOverview, executive: renderExecutive, impact: renderImpact, team: renderTeam, calls: renderCalls, personal: renderPersonal };
+  const r = { overview: renderOverview, executive: renderExecutive, impact: renderImpact, team: renderTeam, calls: renderCalls, 'real-calls': renderRealCalls, personal: renderPersonal };
   r[currentPage]?.();
 }
 
@@ -702,6 +702,150 @@ function renderCallDetail(call) {
           <div style="font-weight:600;min-width:90px;">${w.name} <span style="color:${qaColor(w.score)}">${w.score}</span></div>
           <div style="font-size:13px;color:var(--text-secondary);">${REC_ACTIONS[w.name] || 'Улучшить навык'}</div>
         </div>`).join('')}` : '<div class="alert-box success"><span class="alert-icon">🎉</span><div><div class="alert-title">Отличный звонок!</div><div class="alert-text">Все критерии на высоком уровне.</div></div></div>'}
+  `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  PAGE: REAL CALLS
+// ═══════════════════════════════════════════════════════════════════════
+function renderRealCalls() {
+  if (typeof REAL_CALLS === 'undefined' || !REAL_CALLS.length) return;
+
+  const calls = REAL_CALLS;
+  const avgAll = avg(calls.map(c => c.avgScore));
+  const best = calls.reduce((a, b) => a.avgScore > b.avgScore ? a : b);
+  const aboveNorm = calls.filter(c => c.avgScore >= 3.8).length;
+
+  // KPIs
+  document.getElementById('real-kpis').innerHTML = `
+    <div class="kpi-card">
+      <div class="kpi-label">Звонков</div>
+      <div class="kpi-value">${calls.length}</div>
+      <div class="kpi-sub">10.02.2026</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Ср. оценка</div>
+      <div class="kpi-value" style="color:${qaColor(avgAll)}">${fmt(avgAll, 2)}</div>
+      <div class="kpi-sub">из 5.0</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Выше нормы (3.8)</div>
+      <div class="kpi-value ${aboveNorm / calls.length > 0.5 ? 'green' : ''}" style="color:${aboveNorm / calls.length > 0.5 ? '#10b981' : '#ef4444'}">${aboveNorm} из ${calls.length}</div>
+      <div class="kpi-sub">${fmtPct(aboveNorm / calls.length)}</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Лучший результат</div>
+      <div class="kpi-value green">${fmt(best.avgScore, 2)}</div>
+      <div class="kpi-sub">${best.operator}</div>
+    </div>`;
+
+  // Criteria bar chart
+  const criteriaKeys = ['contact','needs','presentation','objections','closing','modules','grammar','tone','activity','listening'];
+  const criteriaNames = ['Контакт','Потребности','Презентация','Возражения','Завершение','Модули','Грамотность','Тон','Активность','Слушание'];
+  const criteriaAvgs = criteriaKeys.map(k => avg(calls.map(c => c.scores[k])));
+
+  Plotly.newPlot('real-criteria-chart', [
+    {
+      x: criteriaNames, y: criteriaAvgs, type: 'bar',
+      marker: { color: criteriaAvgs.map(v => v >= 3.8 ? '#10b981' : v >= 3.0 ? '#f59e0b' : '#ef4444') },
+      text: criteriaAvgs.map(v => v.toFixed(2)), textposition: 'outside',
+    },
+    {
+      x: criteriaNames, y: criteriaNames.map(() => 3.8), type: 'scatter', mode: 'lines',
+      name: 'Норма 3.8', line: { color: '#ef4444', dash: 'dash', width: 2 }, showlegend: true,
+    },
+  ], {
+    margin: { t: 20, b: 80, l: 50, r: 20 }, height: 350, font: plotlyFont,
+    yaxis: { range: [0, 5], dtick: 1 }, showlegend: true,
+    legend: { orientation: 'h', y: -0.25 },
+  }, plotlyConfig);
+
+  // Call selector
+  const sel = document.getElementById('realCallSelector');
+  sel.innerHTML = calls.sort((a, b) => b.avgScore - a.avgScore)
+    .map(c => `<option value="${c.id}">${c.operator} · ${c.line} · ${fmt(c.avgScore, 2)} · ${c.success}</option>`).join('');
+  sel.onchange = () => renderRealCallDetail(calls.find(c => c.id === +sel.value));
+  renderRealCallDetail(calls[0]);
+
+  // Table
+  const sorted = [...calls].sort((a, b) => b.avgScore - a.avgScore);
+  document.getElementById('real-calls-table').innerHTML = `
+    <table class="data-table"><thead><tr>
+      <th>#</th><th>Оператор</th><th>Линия</th><th>Длит.</th><th>Контакт</th><th>Потр.</th><th>Презент.</th><th>Возр.</th><th>Заверш.</th><th>Модули</th><th>Грамот.</th><th>Тон</th><th>Актив.</th><th>Слуш.</th><th>Среднее</th><th>Статус</th>
+    </tr></thead><tbody>
+    ${sorted.map((c, i) => `<tr style="cursor:pointer;" onclick="document.getElementById('realCallSelector').value='${c.id}';renderRealCallDetail(REAL_CALLS.find(x=>x.id===${c.id}));document.getElementById('real-call-detail').scrollIntoView({behavior:'smooth'});">
+      <td>${i + 1}</td>
+      <td style="font-weight:500;">${c.operator}</td>
+      <td><span class="badge accent">${c.line}</span></td>
+      <td>${Math.floor(c.duration / 60)}:${String(c.duration % 60).padStart(2, '0')}</td>
+      ${criteriaKeys.map(k => `<td style="color:${qaColor(c.scores[k])};font-weight:600;font-family:'JetBrains Mono';">${c.scores[k].toFixed(1)}</td>`).join('')}
+      <td style="font-weight:700;color:${qaColor(c.avgScore)};font-family:'JetBrains Mono';">${c.avgScore.toFixed(2)}</td>
+      <td><span class="badge ${c.success === 'Отлично' || c.success === 'Хорошо' ? 'green' : c.success === 'Частично' ? 'yellow' : 'red'}">${c.success}</span></td>
+    </tr>`).join('')}
+    </tbody></table>`;
+}
+
+function renderRealCallDetail(call) {
+  if (!call) return;
+  const criteriaKeys = ['contact','needs','presentation','objections','closing','modules','grammar','tone','activity','listening'];
+  const criteriaNames = ['Контакт','Потребности','Презентация','Возражения','Завершение','Модули','Грамотность','Тон','Активность','Слушание'];
+
+  // Format dialog with colored turns
+  const dialogHtml = call.dialog
+    .replace(/<out>/g, '</span><span style="display:block;margin:4px 0;padding:6px 10px;background:#e8f0fe;border-radius:6px;border-left:3px solid #4f6ef7;font-size:13px;"><b style="color:#4f6ef7;">Оператор:</b> ')
+    .replace(/<in>/g, '</span><span style="display:block;margin:4px 0;padding:6px 10px;background:#f0f0f0;border-radius:6px;border-left:3px solid #9ca3af;font-size:13px;"><b style="color:#6b7280;">Клиент:</b> ')
+    + '</span>';
+
+  // Score bars
+  const scoreBars = criteriaKeys.map((k, i) => {
+    const s = call.scores[k];
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <div style="width:110px;font-size:12px;text-align:right;flex-shrink:0;">${criteriaNames[i]}</div>
+      <div style="flex:1;height:20px;background:var(--border-light);border-radius:4px;overflow:hidden;">
+        <div style="height:100%;width:${s/5*100}%;background:${qaColor(s)};border-radius:4px;"></div>
+      </div>
+      <div style="width:32px;font-size:12px;font-weight:600;font-family:'JetBrains Mono';color:${qaColor(s)};">${s.toFixed(1)}</div>
+    </div>`;
+  }).join('');
+
+  // Recommendations for weak areas
+  const weakCriteria = criteriaKeys
+    .map((k, i) => ({ key: k, name: criteriaNames[i], score: call.scores[k], shortName: CRITERIA[i]?.short || criteriaNames[i] }))
+    .filter(c => c.score < 3.5)
+    .sort((a, b) => a.score - b.score);
+
+  const recsHtml = weakCriteria.length > 0 ? weakCriteria.map(w => `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--yellow-light);border-left:3px solid var(--yellow);border-radius:0 8px 8px 0;margin-bottom:6px;">
+      <div style="font-weight:600;min-width:100px;">${w.name} <span style="color:${qaColor(w.score)}">${w.score.toFixed(1)}</span></div>
+      <div style="font-size:13px;color:var(--text-secondary);">${REC_ACTIONS[w.shortName] || 'Улучшить навык'}</div>
+    </div>`).join('') : '<div style="padding:10px;color:#10b981;font-weight:500;">Все критерии на хорошем уровне</div>';
+
+  document.getElementById('real-call-detail').innerHTML = `
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <span class="badge accent">${call.operator}</span>
+        <span class="badge">${call.line}</span>
+        <span class="badge">${call.direction}</span>
+        <span class="badge accent">${Math.floor(call.duration / 60)}:${String(call.duration % 60).padStart(2, '0')}</span>
+        <span class="badge ${call.success === 'Отлично' || call.success === 'Хорошо' ? 'green' : call.success === 'Частично' ? 'yellow' : 'red'}">${call.success} · ${call.avgScore.toFixed(2)}</span>
+      </div>
+    </div>
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div>
+        <div style="font-weight:600;margin-bottom:8px;">Оценки по критериям</div>
+        ${scoreBars}
+      </div>
+      <div>
+        <div style="font-weight:600;margin-bottom:8px;">Рекомендации</div>
+        ${recsHtml}
+      </div>
+    </div>
+    <div>
+      <div style="font-weight:600;margin-bottom:8px;">Диалог</div>
+      <div style="max-height:400px;overflow-y:auto;padding:8px;background:#fafafa;border-radius:8px;border:1px solid var(--border-light);">
+        ${dialogHtml}
+      </div>
+    </div>
   `;
 }
 

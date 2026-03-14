@@ -52,6 +52,9 @@
       <div class="sidebar-item" data-page="calls">
         <span class="sidebar-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span> Анализ звонков
       </div>
+      <div class="sidebar-item" data-page="real-calls">
+        <span class="sidebar-item-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span> Реальные звонки
+      </div>
     </div>
 
     <!-- Role: Оператор -->
@@ -251,6 +254,38 @@
       </div>
     </section>
 
+    <!-- ═══ PAGE: REAL CALLS (Супервайзер) ═══ -->
+    <section class="page-section" id="page-real-calls">
+      <div class="page-header">
+        <div>
+          <div class="page-title">Реальные звонки</div>
+          <div class="page-subtitle">Оценка качества по 10 критериям · 49 звонков · 10.02.2026</div>
+        </div>
+      </div>
+      <div class="kpi-grid" id="real-kpis"></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Средние оценки по критериям</div>
+          <div class="card-subtitle">Норма: 3.8</div>
+        </div>
+        <div id="real-criteria-chart" class="chart-container" style="min-height:350px;"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Выберите звонок</div>
+        </div>
+        <select class="sidebar-select" id="realCallSelector" style="background:#f7f8fa;color:#1a1d23;border-color:#e5e7eb;margin-bottom:12px;"></select>
+        <div id="real-call-detail"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Все звонки</div>
+          <div class="card-subtitle">Сортировка по средней оценке</div>
+        </div>
+        <div id="real-calls-table" style="max-height:500px;overflow-y:auto;"></div>
+      </div>
+    </section>
+
     <!-- ═══ PAGE: PERSONAL (Оператор) ═══ -->
     <section class="page-section" id="page-personal">
       <div class="page-header">
@@ -288,6 +323,7 @@
 </div>
 
 <script src="data.js"></script>
+<script src="real_calls.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
