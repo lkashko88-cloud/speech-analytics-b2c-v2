@@ -723,7 +723,7 @@ function renderRealCalls() {
     <div class="kpi-card">
       <div class="kpi-label">Проанализировано звонков</div>
       <div class="kpi-value">${calls.length}</div>
-      <div class="kpi-sub">ОКЦ · НТП · ССК · 10.02.2026</div>
+      <div class="kpi-sub">Входящие · ОКЦ · НТП · ССК · 10.02.2026</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Ср. оценка качества ${tip('Среднее по 10 критериям (шкала 1-5). Норма: 3.8. Ниже — нужна работа над навыками')}</div>
@@ -768,7 +768,7 @@ function renderRealCalls() {
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FBAC00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       <div>
         <div style="font-weight:700;font-size:15px;">Реальные данные пилота</div>
-        <div style="font-size:13px;opacity:0.85;">Источник: транскрибация звонков ОКЦ / НТП / ССК · 10.02.2026 · Персональные данные анонимизированы</div>
+        <div style="font-size:13px;opacity:0.85;">Источник: транскрибация входящих звонков ОКЦ / НТП / ССК · Дата: 10.02.2026 · Персональные данные анонимизированы</div>
       </div>
     </div>`;
 
