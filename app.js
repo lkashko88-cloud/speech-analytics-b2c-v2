@@ -907,8 +907,8 @@ function renderRealCalls() {
         </div>
       </td>
       <td><span class="badge ${c.success === 'Отлично' || c.success === 'Хорошо' ? 'green' : c.success === 'Частично' ? 'yellow' : 'red'}">${c.success}</span></td>
-      <td style="font-size:12px;">${weak.map(w => `<span style="color:#ef4444;">${w.name}</span> <span style="font-family:'JetBrains Mono';color:var(--text-muted);">${w.score.toFixed(1)}</span>`).join(' · ')}</td>
-      <td style="font-size:12px;">${strong.map(w => `<span style="color:#10b981;">${w.name}</span> <span style="font-family:'JetBrains Mono';color:var(--text-muted);">${w.score.toFixed(1)}</span>`).join(' · ')}</td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap;">${weak.map(w => `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#fef2f2;border:1px solid #fecaca;border-radius:20px;font-size:11px;white-space:nowrap;"><span style="width:18px;height:4px;background:#fecaca;border-radius:2px;overflow:hidden;display:inline-block;"><span style="display:block;height:100%;width:${w.score/5*100}%;background:#ef4444;border-radius:2px;"></span></span><span style="color:#b91c1c;font-weight:500;">${w.name}</span><span style="font-family:'JetBrains Mono';color:#ef4444;font-weight:700;font-size:10px;">${w.score.toFixed(1)}</span></span>`).join('')}</div></td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap;">${strong.map(w => `<span style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:20px;font-size:11px;white-space:nowrap;"><span style="width:18px;height:4px;background:#bbf7d0;border-radius:2px;overflow:hidden;display:inline-block;"><span style="display:block;height:100%;width:${w.score/5*100}%;background:#10b981;border-radius:2px;"></span></span><span style="color:#166534;font-weight:500;">${w.name}</span><span style="font-family:'JetBrains Mono';color:#10b981;font-weight:700;font-size:10px;">${w.score.toFixed(1)}</span></span>`).join('')}</div></td>
     </tr>`;
     }).join('')}
     </tbody></table>`;
