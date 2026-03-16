@@ -879,9 +879,9 @@ function renderRealCalls() {
     <div style="font-weight:700;margin-bottom:10px;">Примеры из реальных звонков: как сказали → как лучше</div>
     <div style="display:flex;flex-direction:column;gap:12px;">
       ${belowNorm.slice(0, 3).map(c => {
-        // Find 2 worst calls for this criterion (min 60s to avoid broken short calls)
+        // Find 2 worst calls for this criterion (min 120s to avoid broken/short calls)
         const worstCalls = [...calls]
-          .filter(x => x.duration >= 60)
+          .filter(x => x.duration >= 120)
           .sort((a, b) => a.scores[c.key] - b.scores[c.key])
           .slice(0, 2);
 
@@ -912,7 +912,7 @@ function renderRealCalls() {
             } else { txt += ' ' + p; }
           }
           if (cur === '<out>' && txt.trim()) merged.push(txt.trim());
-          const opPhrases = merged.filter(p => p.length > 15);
+          const opPhrases = merged.filter(p => p.length > 5);
           if (position === 'end') {
             return opPhrases.slice(-2).map(p => p.substring(0, 100)).join('... ') || '(нет данных)';
           }
