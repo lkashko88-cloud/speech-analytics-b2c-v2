@@ -879,8 +879,9 @@ function renderRealCalls() {
     <div style="font-weight:700;margin-bottom:10px;">Примеры из реальных звонков: как сказали → как лучше</div>
     <div style="display:flex;flex-direction:column;gap:12px;">
       ${belowNorm.slice(0, 3).map(c => {
-        // Find 2 worst calls for this criterion
+        // Find 2 worst calls for this criterion (min 60s to avoid broken short calls)
         const worstCalls = [...calls]
+          .filter(x => x.duration >= 60)
           .sort((a, b) => a.scores[c.key] - b.scores[c.key])
           .slice(0, 2);
 
@@ -898,22 +899,24 @@ function renderRealCalls() {
         };
         const ref = goodExamples[c.name] || { good: '—', note: '' };
 
-        // Extract first meaningful operator phrase from dialog
+        // Extract operator phrases, merging consecutive <out> fragments
         function extractOpPhrase(dialog, position) {
-          const parts = dialog.split(/<out>|<in>/);
-          const tags = dialog.match(/<out>|<in>/g) || [];
-          const opPhrases = [];
-          for (let i = 0; i < tags.length; i++) {
-            if (tags[i] === '<out>' && parts[i+1]) {
-              const p = parts[i+1].trim();
-              if (p.length > 10) opPhrases.push(p);
-            }
+          const dp = dialog.split(/(<out>|<in>)/);
+          const merged = [];
+          let cur = null, txt = '';
+          for (const p of dp) {
+            if (p === '<out>' || p === '<in>') {
+              if (p === cur) continue;
+              if (cur === '<out>' && txt.trim()) merged.push(txt.trim());
+              cur = p; txt = '';
+            } else { txt += ' ' + p; }
           }
+          if (cur === '<out>' && txt.trim()) merged.push(txt.trim());
+          const opPhrases = merged.filter(p => p.length > 15);
           if (position === 'end') {
-            const last = opPhrases.slice(-2);
-            return last.map(p => p.substring(0, 80)).join('... ') || '(нет данных)';
+            return opPhrases.slice(-2).map(p => p.substring(0, 100)).join('... ') || '(нет данных)';
           }
-          return opPhrases.slice(0, 2).map(p => p.substring(0, 80)).join('... ') || '(нет данных)';
+          return opPhrases.slice(0, 2).map(p => p.substring(0, 100)).join('... ') || '(нет данных)';
         }
 
         // For closing/modules — show end of dialog, for others — beginning
@@ -1006,11 +1009,35 @@ function renderRealCallDetail(call) {
   const criteriaKeys = ['contact','needs','presentation','objections','closing','modules','grammar','tone','activity','listening'];
   const criteriaNames = ['Контакт','Потребности','Презентация','Возражения','Завершение','Модули','Грамотность','Тон','Активность','Слушание'];
 
-  // Format dialog with colored turns
-  const dialogHtml = call.dialog
-    .replace(/<out>/g, '</span><span style="display:block;margin:4px 0;padding:6px 10px;background:#e8f0fe;border-radius:6px;border-left:3px solid #4f6ef7;font-size:13px;"><b style="color:#4f6ef7;">Оператор:</b> ')
-    .replace(/<in>/g, '</span><span style="display:block;margin:4px 0;padding:6px 10px;background:#f0f0f0;border-radius:6px;border-left:3px solid #9ca3af;font-size:13px;"><b style="color:#6b7280;">Клиент:</b> ')
-    + '</span>';
+  // Format dialog — merge consecutive turns of the same speaker
+  const dialogParts = call.dialog.split(/(<out>|<in>)/);
+  const mergedTurns = [];
+  let currentSpeaker = null;
+  let currentText = '';
+  for (const part of dialogParts) {
+    if (part === '<out>' || part === '<in>') {
+      if (part === currentSpeaker && currentText) {
+        // same speaker continues — merge
+        continue;
+      }
+      if (currentSpeaker && currentText.trim()) {
+        mergedTurns.push({ speaker: currentSpeaker, text: currentText.trim() });
+      }
+      currentSpeaker = part;
+      currentText = '';
+    } else {
+      currentText += ' ' + part;
+    }
+  }
+  if (currentSpeaker && currentText.trim()) {
+    mergedTurns.push({ speaker: currentSpeaker, text: currentText.trim() });
+  }
+  const dialogHtml = mergedTurns.map(t => {
+    if (t.speaker === '<out>') {
+      return `<span style="display:block;margin:4px 0;padding:6px 10px;background:#e8f0fe;border-radius:6px;border-left:3px solid #4f6ef7;font-size:13px;"><b style="color:#4f6ef7;">Оператор:</b> ${t.text}</span>`;
+    }
+    return `<span style="display:block;margin:4px 0;padding:6px 10px;background:#f0f0f0;border-radius:6px;border-left:3px solid #9ca3af;font-size:13px;"><b style="color:#6b7280;">Клиент:</b> ${t.text}</span>`;
+  }).join('');
 
   // Score bars
   const scoreBars = criteriaKeys.map((k, i) => {
