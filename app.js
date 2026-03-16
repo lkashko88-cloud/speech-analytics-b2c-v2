@@ -709,10 +709,30 @@ function renderCallDetail(call) {
 // ═══════════════════════════════════════════════════════════════════════
 //  PAGE: REAL CALLS
 // ═══════════════════════════════════════════════════════════════════════
+let currentRealFilter = 'all';
+function filterRealCalls(filter) {
+  currentRealFilter = filter;
+  document.querySelectorAll('[data-real-filter]').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[data-real-filter="${filter}"]`)?.classList.add('active');
+  renderRealCalls();
+}
+
 function renderRealCalls() {
   if (typeof REAL_CALLS === 'undefined' || !REAL_CALLS.length) return;
 
-  const calls = REAL_CALLS;
+  const allCalls = REAL_CALLS;
+  const calls = currentRealFilter === 'all' ? allCalls
+    : currentRealFilter === 'in' ? allCalls.filter(c => c.direction === 'Входящий')
+    : allCalls.filter(c => c.direction === 'Исходящий');
+
+  if (!calls.length) return;
+
+  const inCount = allCalls.filter(c => c.direction === 'Входящий').length;
+  const outCount = allCalls.filter(c => c.direction === 'Исходящий').length;
+  const filterLabel = currentRealFilter === 'all' ? `${calls.length} звонков (${inCount} вх. + ${outCount} исх.)`
+    : currentRealFilter === 'in' ? `${calls.length} входящих звонков`
+    : `${calls.length} исходящих звонков`;
+  document.getElementById('real-subtitle').textContent = `Оценка качества по 10 критериям · ${filterLabel}`;
   const avgAll = avg(calls.map(c => c.avgScore));
   const best = calls.reduce((a, b) => a.avgScore > b.avgScore ? a : b);
   const aboveNorm = calls.filter(c => c.avgScore >= 3.8).length;
@@ -723,7 +743,7 @@ function renderRealCalls() {
     <div class="kpi-card">
       <div class="kpi-label">Проанализировано звонков</div>
       <div class="kpi-value">${calls.length}</div>
-      <div class="kpi-sub">Входящие · ОКЦ · НТП · ССК · 10.02.2026</div>
+      <div class="kpi-sub">${currentRealFilter === 'in' ? 'Входящие' : currentRealFilter === 'out' ? 'Исходящие' : 'Входящие + Исходящие'} · ОКЦ · НТП · ССК</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Ср. оценка качества ${tip('Среднее по 10 критериям (шкала 1-5). Норма: 3.8. Ниже — нужна работа над навыками')}</div>
@@ -768,7 +788,7 @@ function renderRealCalls() {
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FBAC00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       <div>
         <div style="font-weight:700;font-size:15px;">Реальные данные пилота</div>
-        <div style="font-size:13px;opacity:0.85;">Источник: транскрибация входящих звонков ОКЦ / НТП / ССК · Дата: 10.02.2026 · Персональные данные анонимизированы</div>
+        <div style="font-size:13px;opacity:0.85;">Источник: транскрибация звонков ОКЦ / НТП / ССК / Телемаркетинг · ${inCount} входящих + ${outCount} исходящих · Февраль 2026 · Данные анонимизированы</div>
       </div>
     </div>`;
 

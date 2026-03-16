@@ -259,7 +259,12 @@
       <div class="page-header">
         <div>
           <div class="page-title">Реальные звонки</div>
-          <div class="page-subtitle">Оценка качества по 10 критериям · 49 входящих звонков · 10.02.2026</div>
+          <div class="page-subtitle" id="real-subtitle">Оценка качества по 10 критериям</div>
+        </div>
+        <div class="period-selector" style="margin-left:auto;">
+          <button class="period-btn active" data-real-filter="all" onclick="filterRealCalls('all')">Все</button>
+          <button class="period-btn" data-real-filter="in" onclick="filterRealCalls('in')">Входящие</button>
+          <button class="period-btn" data-real-filter="out" onclick="filterRealCalls('out')">Исходящие</button>
         </div>
       </div>
       <div id="real-summary"></div>
