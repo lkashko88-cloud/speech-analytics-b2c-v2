@@ -769,6 +769,7 @@ function renderRealCalls() {
   Plotly.newPlot('real-criteria-chart', [
     {
       x: criteriaNames, y: criteriaAvgs, type: 'bar',
+      name: 'Оценка критерия',
       marker: { color: criteriaAvgs.map(v => v >= 3.8 ? '#10b981' : v >= 3.0 ? '#f59e0b' : '#ef4444') },
       text: criteriaAvgs.map(v => v.toFixed(2)), textposition: 'outside',
     },
