@@ -393,7 +393,9 @@ function renderImpact() {
   const highConv = calcConvForQa(targeted, 4, 5.01);
   const lowConv = calcConvForQa(targeted, 0, 3.5);
   const ratio = lowConv > 0 ? (highConv / lowConv) : 0;
+  const totalUnitsImpact = calls.reduce((s, c) => s + c.units, 0);
   const totalRev = calls.reduce((s, c) => s + c.revenue, 0);
+  const lostUnits = ratio > 0 ? Math.round(totalUnitsImpact * (1 - lowConv / Math.max(0.01, highConv)) * 0.3) : 0;
   const lostRev = ratio > 0 ? Math.round(totalRev * (1 - lowConv / Math.max(0.01, highConv)) * 0.3) : 0;
 
   // KPIs
@@ -414,9 +416,9 @@ function renderImpact() {
       <div class="kpi-sub">слабые звонки</div>
     </div>
     <div class="kpi-card">
-      <div class="kpi-label">Потери от слабых звонков ${tip('Упущенная выручка из-за низкого качества')}<span class="kpi-label-icon">💸</span></div>
-      <div class="kpi-value red">${fmtMoney(lostRev)}</div>
-      <div class="kpi-sub">можно вернуть</div>
+      <div class="kpi-label">Потери от слабых звонков ${tip('Упущенные продажи из-за низкого качества')}<span class="kpi-label-icon">💸</span></div>
+      <div class="kpi-value red">−${lostUnits} шт.</div>
+      <div class="kpi-sub">${fmtMoney(lostRev)} через ARPU</div>
     </div>
   `;
 
@@ -425,7 +427,7 @@ function renderImpact() {
       <span class="alert-icon">💡</span>
       <div>
         <div class="alert-title">Главный вывод для бизнеса</div>
-        <div class="alert-text">Операторы с оценкой <b>≥4.0</b> продают в <span class="val-green">×${ratio.toFixed(1)} раз</span> чаще, чем с оценкой <b>&lt;3.5</b> (${fmtPct(highConv)} vs ${fmtPct(lowConv)}). Подтягивание слабых операторов до уровня 4.0 = <span class="val-green">+${fmtMoney(lostRev)}</span> выручки.</div>
+        <div class="alert-text">Операторы с оценкой <b>≥4.0</b> продают в <span class="val-green">×${ratio.toFixed(1)} раз</span> чаще, чем с оценкой <b>&lt;3.5</b> (${fmtPct(highConv)} vs ${fmtPct(lowConv)}). Подтягивание слабых операторов до уровня 4.0 = <span class="val-green">+${lostUnits} шт.</span> продаж (<span class="val-green">+${fmtMoney(lostRev)}</span>).</div>
       </div>
     </div>`;
 
@@ -454,29 +456,51 @@ function renderImpact() {
     annotations: [{ x: '4.0-4.5', y: Math.max(...bucketConv) * 1.15, text: '← Целевая зона', showarrow: false, font: { color: '#10b981', size: 12 } }],
   }, plotlyConfig);
 
-  // Operator potential table
+  // Operator potential table — in units
   const opData = OPERATORS.map(op => {
     const opT = targeted.filter(c => c.operatorId === op.id);
     const opS = opT.filter(c => c.converted);
     const qa = avg(opT.map(c => c.qaScore));
     const conv = opT.length ? opS.length / opT.length : 0;
-    const rev = opT.reduce((s, c) => s + c.revenue, 0);
+    const units = opS.length;
     const gap = Math.max(0, 3.8 - qa);
-    const extra = gap > 0 ? Math.round(rev * gap * 0.1) : 0;
-    return { name: op.shortName, qa, conv, rev, extra, gap };
+    const extraUnits = gap > 0 ? Math.round(units * gap * 0.1) : 0;
+    return { name: op.shortName, qa, conv, units, extraUnits, gap };
   });
 
   document.getElementById('impact-operators').innerHTML = `
     <table class="comp-table">
-      <tr><th>Оператор</th><th>Оценка</th><th>Конверсия</th><th>Выручка</th><th>Потенциал</th></tr>
+      <tr><th>Оператор</th><th>Оценка</th><th>Конверсия</th><th>Продажи</th><th>Потенциал</th></tr>
       ${opData.map(o => `<tr>
         <td>${o.name}</td>
         <td><span class="comp-cell ${qaClass(o.qa)}">${fmt(o.qa, 2)}</span></td>
         <td>${fmtPct(o.conv)}</td>
-        <td>${fmtMoney(o.rev)}</td>
-        <td>${o.extra > 0 ? `<span style="color:#10b981;font-weight:600;">+${fmtMoney(o.extra)}</span>` : '<span style="color:#9ca3af;">Уже выше цели</span>'}</td>
+        <td>${o.units} шт.</td>
+        <td>${o.extraUnits > 0 ? `<span style="color:#10b981;font-weight:600;">+${o.extraUnits} шт.</span>` : '<span style="color:#9ca3af;">Выше цели</span>'}</td>
       </tr>`).join('')}
     </table>`;
+
+  // Product breakdown — sales by product in units
+  const prodSales = {};
+  calls.filter(c => c.converted).forEach(c => { prodSales[c.product] = (prodSales[c.product] || 0) + c.units; });
+  const prodSorted = Object.entries(prodSales).sort((a, b) => b[1] - a[1]);
+
+  document.getElementById('impact-products').innerHTML = prodSorted.length ? `
+    <table class="comp-table">
+      <tr><th>Продукт</th><th>Продажи (шт.)</th><th>ARPU</th><th>Выручка</th></tr>
+      ${prodSorted.map(([p, u]) => `<tr>
+        <td>${p}</td>
+        <td style="font-weight:600;">${u} шт.</td>
+        <td>${fmtMoney(PRODUCT_ARPU[p] || 0)}</td>
+        <td>${fmtMoney(u * (PRODUCT_ARPU[p] || 0))}</td>
+      </tr>`).join('')}
+      <tr style="font-weight:700;border-top:2px solid var(--border);">
+        <td>Итого</td>
+        <td>${totalUnitsImpact} шт.</td>
+        <td></td>
+        <td>${fmtMoney(totalRev)}</td>
+      </tr>
+    </table>` : '';
 
   // ── Client Profile → Personalized Script ─────────────────────────
   const profileData = buildClientProfile(targeted);
@@ -1172,39 +1196,31 @@ function renderPersonal() {
   `;
 
   // ── Speedometer: potential sales ──────────────────────────────────
-  const currentConv = convRate;
   const targetConv = 0.85; // benchmark
-  const potentialExtra = targeted.length > 0 ? Math.round(targeted.length * (targetConv - currentConv)) : 0;
-  const potentialTotal = opUnits + Math.max(0, potentialExtra);
+  const potentialExtra = targeted.length > 0 ? Math.max(0, Math.round(targeted.length * (targetConv - convRate))) : 0;
+  const potentialTotal = opUnits + potentialExtra;
 
-  Plotly.newPlot('personal-speedometer', [{
-    type: 'indicator',
-    mode: 'gauge+number+delta',
-    value: opUnits,
-    delta: { reference: 0, increasing: { color: '#10b981' }, suffix: ' шт.' },
-    title: { text: 'Продано / Потенциал', font: { size: 14 } },
-    number: { suffix: ' шт.', font: { size: 28, family: 'JetBrains Mono' } },
-    gauge: {
-      axis: { range: [0, Math.max(potentialTotal, opUnits + 5)], ticksuffix: ' шт.' },
-      bar: { color: '#4f6ef7', thickness: 0.6 },
-      bgcolor: '#f3f4f6',
-      steps: [
-        { range: [opUnits, potentialTotal], color: 'rgba(16,185,129,0.15)' },
-      ],
-      threshold: {
-        line: { color: '#10b981', width: 3 },
-        thickness: 0.8,
-        value: potentialTotal,
-      },
-    },
-  }], {
-    margin: { t: 40, b: 20, l: 30, r: 30 }, height: 260, font: plotlyFont,
-    annotations: [{
-      text: `+${Math.max(0, potentialExtra)} шт. при конверсии ${fmtPct(targetConv)}`,
-      x: 0.5, y: -0.05, showarrow: false,
-      font: { size: 12, color: '#10b981' },
-    }],
-  }, plotlyConfig);
+  // Visual: stacked bar as speedometer (simpler, clearer)
+  const el = document.getElementById('personal-speedometer');
+  const pctDone = potentialTotal > 0 ? Math.round(opUnits / potentialTotal * 100) : 0;
+  el.innerHTML = `
+    <div style="text-align:center;padding:16px 0;">
+      <div style="font-size:48px;font-weight:700;font-family:'JetBrains Mono';color:#4f6ef7;">${opUnits} <span style="font-size:20px;color:var(--text-secondary);">из ${potentialTotal} шт.</span></div>
+      <div style="margin:16px auto;max-width:400px;">
+        <div style="display:flex;height:32px;border-radius:8px;overflow:hidden;background:#f3f4f6;">
+          <div style="width:${pctDone}%;background:linear-gradient(90deg,#4f6ef7,#6366f1);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:13px;">${pctDone}%</div>
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#10b981;font-weight:600;font-size:13px;">+${potentialExtra} шт.</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text-secondary);">
+          <span>Продано</span>
+          <span>Потенциал при конверсии ${fmtPct(targetConv)}</span>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-size:13px;color:var(--text-secondary);">
+        Текущая конверсия: <b>${fmtPct(convRate)}</b> → целевая: <b>${fmtPct(targetConv)}</b>
+      </div>
+    </div>
+  `;
 
   // ── Plan-fact by products ─────────────────────────────────────────
   const productFact = {};
