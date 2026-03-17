@@ -21,6 +21,26 @@ const CRITERIA = [
 
 const PRODUCTS = ['ИКТВ Movix', 'КТВ', 'Приставки', 'Оборудование ИНТ', 'Услуга ИНТ МКД', 'Услуга ИНТ ЧС'];
 
+// Revenue: units (шт.) per product — operator motivation is in units, not rubles
+const PRODUCT_UNITS = {
+  'ИКТВ Movix': 1,
+  'КТВ': 1,
+  'Приставки': 1,
+  'Оборудование ИНТ': 1,
+  'Услуга ИНТ МКД': 1,
+  'Услуга ИНТ ЧС': 1,
+};
+
+// ARPU for ruble conversion (placeholder — to be confirmed by business)
+const PRODUCT_ARPU = {
+  'ИКТВ Movix': 450,
+  'КТВ': 380,
+  'Приставки': 290,
+  'Оборудование ИНТ': 520,
+  'Услуга ИНТ МКД': 600,
+  'Услуга ИНТ ЧС': 750,
+};
+
 const CLIENT_SEGMENTS = {
   type: ['Новый клиент', 'Текущий клиент'],
   gender: ['Мужчина', 'Женщина'],
@@ -177,6 +197,17 @@ function generateCallData() {
 
         const sentiment = randChoice(['нейтральный', 'нейтральный', 'нейтральный', 'позитивный', 'негативный']);
 
+        // Funnel: Недозвон (didn't reach client) — only for targeted
+        const isNedozvon = isTargeted && !converted && rand() < 0.12; // ~12% of targeted
+        // Funnel: Заключка (application created after sale)
+        const isZakluchka = converted && rand() < 0.85; // 85% of sales → application
+        // Funnel: Подключка (connected within 35 days)
+        const isPodkluchka = isZakluchka && rand() < 0.78; // 78% of applications → connected
+
+        // Revenue in units (1 sale = 1 unit of product)
+        const units = converted ? 1 : 0;
+        const revenueRub = converted ? PRODUCT_ARPU[product] : 0;
+
         calls.push({
           date: d.toISOString().slice(0, 10),
           operatorId: op.id,
@@ -190,8 +221,12 @@ function generateCallData() {
           qaScore,
           success,
           converted,
+          isNedozvon,
+          isZakluchka,
+          isPodkluchka,
           sentiment,
-          revenue: converted ? randInt(800, 3500) : 0,
+          units,
+          revenue: revenueRub,
         });
       }
     }

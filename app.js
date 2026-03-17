@@ -85,30 +85,73 @@ function renderOverview() {
   const calls = getCalls();
   const targeted = calls.filter(c => c.isTargeted);
   const avgQa = avg(targeted.map(c => c.qaScore));
-  const convRate = targeted.length ? targeted.filter(c => c.converted).length / targeted.length : 0;
+  const converted = calls.filter(c => c.converted);
+  const convRate = targeted.length ? converted.length / targeted.length : 0;
   const successRate = targeted.length ? targeted.filter(c => ['Отлично', 'Хорошо'].includes(c.success)).length / targeted.length : 0;
-  const totalRevenue = calls.reduce((s, c) => s + c.revenue, 0);
+  const totalUnits = calls.reduce((s, c) => s + c.units, 0);
+  const totalRevenueRub = calls.reduce((s, c) => s + c.revenue, 0);
+
+  // Funnel metrics
+  const nedozvony = targeted.filter(c => c.isNedozvon);
+  const dozvony = targeted.filter(c => !c.isNedozvon);
+  const zakluchki = calls.filter(c => c.isZakluchka);
+  const podkluchki = calls.filter(c => c.isPodkluchka);
 
   document.getElementById('overview-kpis').innerHTML = `
     <div class="kpi-card">
-      <div class="kpi-label">Всего звонков <span class="kpi-label-icon">📞</span></div>
-      <div class="kpi-value">${calls.length}</div>
-      <div class="kpi-sub">Целевых: ${targeted.length}</div>
+      <div class="kpi-label">Создано лидов <span class="kpi-label-icon">📞</span></div>
+      <div class="kpi-value">${targeted.length}</div>
+      <div class="kpi-sub">ОЦП Входящие продажи</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Конверсия в продажу ${tip('Доля дозвонов, закончившихся продажей')}<span class="kpi-label-icon">📈</span></div>
+      <div class="kpi-value accent">${fmtPct(convRate)}</div>
+      <div class="kpi-sub">целевая: 85%+</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Продажи ${tip('Количество проданных услуг/оборудования')}<span class="kpi-label-icon">🎯</span></div>
+      <div class="kpi-value green">${totalUnits} шт.</div>
+      <div class="kpi-sub">${fmtMoney(totalRevenueRub)} через ARPU</div>
     </div>
     <div class="kpi-card">
       <div class="kpi-label">Ср. оценка ${tip('Средний балл по 10 критериям, шкала 1-5')}<span class="kpi-label-icon">⭐</span></div>
       <div class="kpi-value" style="color:${qaColor(avgQa)}">${fmt(avgQa, 2)}</div>
       <div class="kpi-sub">из 5.0</div>
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Качество звонков ${tip('Доля звонков с LLM-оценкой Отлично или Хорошо. Не = продажа')}<span class="kpi-label-icon">✅</span></div>
-      <div class="kpi-value green">${fmtPct(successRate)}</div>
-      <div class="kpi-sub">оценка Отлично + Хорошо</div>
+  `;
+
+  // ── Funnel: Воронка лидов ──────────────────────────────────────────
+  const funnelStages = [
+    { label: 'Создано лидов', value: targeted.length, pct: '100%' },
+    { label: 'Дозвоны', value: dozvony.length, pct: targeted.length ? fmtPct(dozvony.length / targeted.length) : '0%' },
+    { label: 'Продажа', value: converted.length, pct: dozvony.length ? fmtPct(converted.length / dozvony.length) : '0%' },
+    { label: 'Заключка', value: zakluchki.length, pct: converted.length ? fmtPct(zakluchki.length / converted.length) : '0%' },
+    { label: 'Подключка', value: podkluchki.length, pct: zakluchki.length ? fmtPct(podkluchki.length / zakluchki.length) : '0%' },
+  ];
+  const nedozvonPct = targeted.length ? fmtPct(nedozvony.length / targeted.length) : '0%';
+
+  document.getElementById('overview-funnel').innerHTML = `
+    <div style="display:flex;align-items:stretch;gap:0;margin-bottom:16px;">
+      ${funnelStages.map((s, i) => {
+        const width = s.value / funnelStages[0].value * 100;
+        const colors = ['#4f6ef7', '#6366f1', '#f59e0b', '#10b981', '#059669'];
+        return `
+          <div style="flex:1;text-align:center;position:relative;">
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">${s.label}</div>
+            <div style="background:${colors[i]};color:#fff;padding:12px 4px;font-weight:700;font-size:18px;font-family:'JetBrains Mono';
+              ${i === 0 ? 'border-radius:8px 0 0 8px;' : i === funnelStages.length - 1 ? 'border-radius:0 8px 8px 0;' : ''}
+              min-height:48px;display:flex;align-items:center;justify-content:center;">${s.value}</div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">${i === 0 ? '' : '↓ ' + s.pct}</div>
+            ${i < funnelStages.length - 1 ? '<div style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);z-index:1;color:var(--text-secondary);font-size:16px;">›</div>' : ''}
+          </div>`;
+      }).join('')}
     </div>
-    <div class="kpi-card">
-      <div class="kpi-label">Конверсия в продажу ${tip('Доля целевых звонков, закончившихся продажей')}<span class="kpi-label-icon">💰</span></div>
-      <div class="kpi-value accent">${fmtPct(convRate)}</div>
-      <div class="kpi-sub">выручка: ${fmtMoney(totalRevenue)}</div>
+    <div style="display:flex;gap:16px;padding:8px 12px;background:#fef2f2;border-radius:8px;border-left:3px solid #ef4444;align-items:center;">
+      <span style="font-size:18px;">📵</span>
+      <div>
+        <span style="font-weight:600;">Недозвоны:</span> ${nedozvony.length} (${nedozvonPct} от лидов)
+        <span style="color:var(--text-secondary);font-size:12px;margin-left:8px;">— потерянные лиды, с которыми не удалось поговорить</span>
+      </div>
     </div>
   `;
 
@@ -243,33 +286,44 @@ function renderExecutive() {
   const convRate = targeted.length ? converted.length / targeted.length : 0;
   const avgQa = avg(targeted.map(c => c.qaScore));
 
+  const totalUnitsExec = calls.reduce((s, c) => s + c.units, 0);
+
   document.getElementById('exec-kpis').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Выручка <span class="kpi-label-icon">💰</span></div><div class="kpi-value accent">${fmtMoney(totalRev)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Продажи ${tip('Кол-во проданных услуг/оборудования')}<span class="kpi-label-icon">🎯</span></div><div class="kpi-value accent">${totalUnitsExec} шт.</div></div>
     <div class="kpi-card"><div class="kpi-label">Конверсия ${tip('Доля целевых звонков → продажа')}<span class="kpi-label-icon">📈</span></div><div class="kpi-value green">${fmtPct(convRate)}</div></div>
     <div class="kpi-card"><div class="kpi-label">Ср. оценка <span class="kpi-label-icon">⭐</span></div><div class="kpi-value" style="color:${qaColor(avgQa)}">${fmt(avgQa, 2)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Продаж <span class="kpi-label-icon">🎯</span></div><div class="kpi-value">${converted.length}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Выручка (ARPU) ${tip('Штуки × ARPU продукта')}<span class="kpi-label-icon">💰</span></div><div class="kpi-value">${fmtMoney(totalRev)}</div></div>
   `;
 
-  // Funnel
+  // Funnel — Lead Management B2C NC stages
+  const execNedozvony = targeted.filter(c => c.isNedozvon);
+  const execDozvony = targeted.filter(c => !c.isNedozvon);
+  const execZakluchki = calls.filter(c => c.isZakluchka);
+  const execPodkluchki = calls.filter(c => c.isPodkluchka);
+
   Plotly.newPlot('exec-funnel', [{
-    type: 'funnel', y: ['Все звонки', 'Целевые', 'Продажи'], x: [calls.length, targeted.length, converted.length],
-    textinfo: 'value+percent initial', marker: { color: ['#4f6ef7', '#f59e0b', '#10b981'] },
-  }], { margin: { t: 10, b: 10, l: 10, r: 10 }, height: 280, font: plotlyFont }, plotlyConfig);
+    type: 'funnel',
+    y: ['Создано лидов', 'Дозвоны', 'Продажа', 'Заключка', 'Подключка'],
+    x: [targeted.length, execDozvony.length, converted.length, execZakluchki.length, execPodkluchki.length],
+    textinfo: 'value+percent initial',
+    marker: { color: ['#4f6ef7', '#6366f1', '#f59e0b', '#10b981', '#059669'] },
+  }], { margin: { t: 10, b: 10, l: 120, r: 10 }, height: 300, font: plotlyFont }, plotlyConfig);
 
   // Ranking
   const opStats = OPERATORS.map(op => {
     const opC = calls.filter(c => c.operatorId === op.id);
     const opT = opC.filter(c => c.isTargeted);
     const opS = opC.filter(c => c.converted);
-    return { name: op.shortName, calls: opC.length, sales: opS.length, conv: opT.length ? opS.length / opT.length : 0, revenue: opC.reduce((s, c) => s + c.revenue, 0), qa: avg(opT.map(c => c.qaScore)) };
+    const opUnits = opC.reduce((s, c) => s + c.units, 0);
+    return { name: op.shortName, calls: opC.length, sales: opS.length, units: opUnits, conv: opT.length ? opS.length / opT.length : 0, qa: avg(opT.map(c => c.qaScore)) };
   }).sort((a, b) => b.conv - a.conv);
 
   document.getElementById('exec-ranking').innerHTML = `
     <table class="comp-table">
-      <tr><th>Оператор</th><th>Звонков</th><th>Продаж</th><th>Конверсия</th><th>Выручка</th><th>Оценка</th></tr>
-      ${opStats.map(o => `<tr><td>${o.name}</td><td>${o.calls}</td><td>${o.sales}</td>
+      <tr><th>Оператор</th><th>Лидов</th><th>Продаж (шт.)</th><th>Конверсия</th><th>Оценка</th></tr>
+      ${opStats.map(o => `<tr><td>${o.name}</td><td>${o.calls}</td><td>${o.units} шт.</td>
         <td><span class="comp-cell ${o.conv >= 0.15 ? 'high' : o.conv >= 0.10 ? 'mid' : 'low'}">${fmtPct(o.conv)}</span></td>
-        <td>${fmtMoney(o.revenue)}</td><td><span class="comp-cell ${qaClass(o.qa)}">${fmt(o.qa, 2)}</span></td></tr>`).join('')}
+        <td><span class="comp-cell ${qaClass(o.qa)}">${fmt(o.qa, 2)}</span></td></tr>`).join('')}
     </table>`;
 
   // Heatmap
@@ -314,8 +368,8 @@ function renderExecutive() {
     <div class="conclusion-card">
       <div class="conclusion-icon green">💰</div>
       <div>
-        <div class="conclusion-title">Потенциал: +${fmtMoney(Math.round(totalRev * 0.15))} выручки</div>
-        <div class="conclusion-text">При подтягивании всех операторов до уровня лучшего — рост выручки ~15%.</div>
+        <div class="conclusion-title">Потенциал: +${Math.round(totalUnitsExec * 0.15)} шт. продаж (+${fmtMoney(Math.round(totalRev * 0.15))})</div>
+        <div class="conclusion-text">При подтягивании всех операторов до уровня лучшего — рост продаж ~15%.</div>
         <div class="conclusion-action">→ Запустить пилот речевой аналитики на фокус-группе 15-20 операторов</div>
       </div>
     </div>
@@ -1106,13 +1160,78 @@ function renderPersonal() {
 
   const avgQa = avg(targeted.map(c => c.qaScore));
   const convRate = targeted.length ? targeted.filter(c => c.converted).length / targeted.length : 0;
-  const successRate = targeted.length ? targeted.filter(c => ['Отлично', 'Хорошо'].includes(c.success)).length / targeted.length : 0;
+
+  const opUnits = calls.reduce((s, c) => s + c.units, 0);
+  const opNedozvony = targeted.filter(c => c.isNedozvon).length;
 
   document.getElementById('personal-kpis').innerHTML = `
-    <div class="kpi-card"><div class="kpi-label">Оценка <span class="kpi-label-icon">⭐</span></div><div class="kpi-value" style="color:${qaColor(avgQa)}">${fmt(avgQa, 2)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Звонков <span class="kpi-label-icon">📞</span></div><div class="kpi-value">${calls.length}</div><div class="kpi-sub">Целевых: ${targeted.length}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Качество звонков ${tip('Отлично + Хорошо по LLM')}<span class="kpi-label-icon">✅</span></div><div class="kpi-value green">${fmtPct(successRate)}</div></div>
-    <div class="kpi-card"><div class="kpi-label">Конверсия в продажу ${tip('Доля звонков → реальная продажа')}<span class="kpi-label-icon">🎯</span></div><div class="kpi-value accent">${fmtPct(convRate)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Продажи <span class="kpi-label-icon">🎯</span></div><div class="kpi-value accent">${opUnits} шт.</div><div class="kpi-sub">ОЦП Входящие продажи</div></div>
+    <div class="kpi-card"><div class="kpi-label">Конверсия ${tip('Доля звонков → реальная продажа')}<span class="kpi-label-icon">📈</span></div><div class="kpi-value green">${fmtPct(convRate)}</div><div class="kpi-sub">целевая: 85%+</div></div>
+    <div class="kpi-card"><div class="kpi-label">Оценка <span class="kpi-label-icon">⭐</span></div><div class="kpi-value" style="color:${qaColor(avgQa)}">${fmt(avgQa, 2)}</div><div class="kpi-sub">из 5.0</div></div>
+    <div class="kpi-card"><div class="kpi-label">Недозвоны <span class="kpi-label-icon">📵</span></div><div class="kpi-value ${opNedozvony > 5 ? 'red' : ''}">${opNedozvony}</div><div class="kpi-sub">${targeted.length ? fmtPct(opNedozvony / targeted.length) : '0%'} от лидов</div></div>
+  `;
+
+  // ── Speedometer: potential sales ──────────────────────────────────
+  const currentConv = convRate;
+  const targetConv = 0.85; // benchmark
+  const potentialExtra = targeted.length > 0 ? Math.round(targeted.length * (targetConv - currentConv)) : 0;
+  const potentialTotal = opUnits + Math.max(0, potentialExtra);
+
+  Plotly.newPlot('personal-speedometer', [{
+    type: 'indicator',
+    mode: 'gauge+number+delta',
+    value: opUnits,
+    delta: { reference: 0, increasing: { color: '#10b981' }, suffix: ' шт.' },
+    title: { text: 'Продано / Потенциал', font: { size: 14 } },
+    number: { suffix: ' шт.', font: { size: 28, family: 'JetBrains Mono' } },
+    gauge: {
+      axis: { range: [0, Math.max(potentialTotal, opUnits + 5)], ticksuffix: ' шт.' },
+      bar: { color: '#4f6ef7', thickness: 0.6 },
+      bgcolor: '#f3f4f6',
+      steps: [
+        { range: [opUnits, potentialTotal], color: 'rgba(16,185,129,0.15)' },
+      ],
+      threshold: {
+        line: { color: '#10b981', width: 3 },
+        thickness: 0.8,
+        value: potentialTotal,
+      },
+    },
+  }], {
+    margin: { t: 40, b: 20, l: 30, r: 30 }, height: 260, font: plotlyFont,
+    annotations: [{
+      text: `+${Math.max(0, potentialExtra)} шт. при конверсии ${fmtPct(targetConv)}`,
+      x: 0.5, y: -0.05, showarrow: false,
+      font: { size: 12, color: '#10b981' },
+    }],
+  }, plotlyConfig);
+
+  // ── Plan-fact by products ─────────────────────────────────────────
+  const productFact = {};
+  calls.filter(c => c.converted).forEach(c => { productFact[c.product] = (productFact[c.product] || 0) + c.units; });
+  // Simulated plan (will be replaced with real data later)
+  const productPlan = {};
+  PRODUCTS.forEach(p => { productPlan[p] = Math.round((productFact[p] || 1) * (1.1 + Math.random() * 0.3)); });
+
+  const pfProducts = PRODUCTS.filter(p => (productFact[p] || 0) > 0 || (productPlan[p] || 0) > 0);
+  document.getElementById('personal-planfact').innerHTML = `
+    <table class="comp-table" style="width:100%;">
+      <tr><th>Продукт</th><th>План</th><th>Факт</th><th>%</th></tr>
+      ${pfProducts.map(p => {
+        const plan = productPlan[p] || 0;
+        const fact = productFact[p] || 0;
+        const pct = plan > 0 ? Math.round(fact / plan * 100) : 0;
+        const cls = pct >= 100 ? 'high' : pct >= 70 ? 'mid' : 'low';
+        return `<tr><td style="font-size:12px;">${p}</td><td>${plan} шт.</td><td>${fact} шт.</td>
+          <td><span class="comp-cell ${cls}">${pct}%</span></td></tr>`;
+      }).join('')}
+      <tr style="font-weight:700;border-top:2px solid var(--border);">
+        <td>Итого</td>
+        <td>${Object.values(productPlan).reduce((a,b)=>a+b,0)} шт.</td>
+        <td>${opUnits} шт.</td>
+        <td><span class="comp-cell ${opUnits >= Object.values(productPlan).reduce((a,b)=>a+b,0) ? 'high' : 'mid'}">${Object.values(productPlan).reduce((a,b)=>a+b,0) > 0 ? Math.round(opUnits / Object.values(productPlan).reduce((a,b)=>a+b,0) * 100) : 0}%</span></td>
+      </tr>
+    </table>
   `;
 
   const means = CRITERIA.map(cr => avg(targeted.map(c => c.scores[cr.key]).filter(v => v !== undefined)));
