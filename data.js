@@ -193,7 +193,10 @@ function generateCallData() {
         else success = 'Неуспешно';
 
         // Conversion (strongly linked to QA score — exponential curve)
-        const converted = isTargeted && rand() < (Math.pow(qaScore / 5, 3) * 0.45);
+        // Conversion: realistic 60-70% average, linked to QA score
+        // qaScore 2.0 → ~45%, 3.0 → ~58%, 3.5 → ~65%, 4.0 → ~72%, 4.5 → ~78%, 5.0 → ~85%
+        const convProb = isTargeted ? clamp(0.30 + qaScore * 0.11, 0.15, 0.88) : 0;
+        const converted = isTargeted && rand() < convProb;
 
         const sentiment = randChoice(['нейтральный', 'нейтральный', 'нейтральный', 'позитивный', 'негативный']);
 

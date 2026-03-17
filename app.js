@@ -1195,32 +1195,48 @@ function renderPersonal() {
     <div class="kpi-card"><div class="kpi-label">Недозвоны <span class="kpi-label-icon">📵</span></div><div class="kpi-value ${opNedozvony > 5 ? 'red' : ''}">${opNedozvony}</div><div class="kpi-sub">${targeted.length ? fmtPct(opNedozvony / targeted.length) : '0%'} от лидов</div></div>
   `;
 
-  // ── Speedometer: potential sales ──────────────────────────────────
-  const targetConv = 0.85; // benchmark
-  const potentialExtra = targeted.length > 0 ? Math.max(0, Math.round(targeted.length * (targetConv - convRate))) : 0;
-  const potentialTotal = opUnits + potentialExtra;
+  // ── Speedometer: conversion gauge + what you gain ────────────────
+  const targetConv = 0.85;
+  const convPct = Math.round(convRate * 100);
+  const potentialExtraUnits = targeted.length > 0 ? Math.max(0, Math.round(targeted.length * (targetConv - convRate))) : 0;
+  const potentialExtraRub = potentialExtraUnits > 0 ? Math.round(potentialExtraUnits * avg(Object.values(PRODUCT_ARPU))) : 0;
+  const gaugeColor = convRate >= 0.85 ? '#059669' : convRate >= 0.70 ? '#f59e0b' : '#ef4444';
 
-  // Visual: stacked bar as speedometer (simpler, clearer)
-  const el = document.getElementById('personal-speedometer');
-  const pctDone = potentialTotal > 0 ? Math.round(opUnits / potentialTotal * 100) : 0;
-  el.innerHTML = `
-    <div style="text-align:center;padding:16px 0;">
-      <div style="font-size:48px;font-weight:700;font-family:'JetBrains Mono';color:#4f6ef7;">${opUnits} <span style="font-size:20px;color:var(--text-secondary);">из ${potentialTotal} шт.</span></div>
-      <div style="margin:16px auto;max-width:400px;">
-        <div style="display:flex;height:32px;border-radius:8px;overflow:hidden;background:#f3f4f6;">
-          <div style="width:${pctDone}%;background:linear-gradient(90deg,#4f6ef7,#6366f1);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:13px;">${pctDone}%</div>
-          <div style="flex:1;display:flex;align-items:center;justify-content:center;color:#10b981;font-weight:600;font-size:13px;">+${potentialExtra} шт.</div>
-        </div>
-        <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--text-secondary);">
-          <span>Продано</span>
-          <span>Потенциал при конверсии ${fmtPct(targetConv)}</span>
-        </div>
+  Plotly.newPlot('personal-speedometer', [{
+    type: 'indicator',
+    mode: 'gauge+number',
+    value: convPct,
+    number: { suffix: '%', font: { size: 36, family: 'JetBrains Mono', color: gaugeColor } },
+    gauge: {
+      axis: { range: [0, 100], ticksuffix: '%', dtick: 10 },
+      bar: { color: gaugeColor, thickness: 0.25 },
+      bgcolor: '#f3f4f6',
+      steps: [
+        { range: [0, 50], color: '#fee2e2' },
+        { range: [50, 70], color: '#fef3c7' },
+        { range: [70, 85], color: '#d1fae5' },
+        { range: [85, 100], color: '#a7f3d0' },
+      ],
+      threshold: { line: { color: '#059669', width: 3 }, thickness: 0.8, value: 85 },
+    },
+  }], { margin: { t: 10, b: 0, l: 30, r: 30 }, height: 200, font: plotlyFont }, plotlyConfig);
+
+  document.getElementById('personal-speedometer').insertAdjacentHTML('beforeend', `
+    <div style="text-align:center;padding:0 12px 8px;">
+      <div style="font-size:13px;color:var(--text-secondary);margin-bottom:8px;">
+        Сейчас: <b style="color:${gaugeColor}">${fmtPct(convRate)}</b> → цель: <b style="color:#059669">85%</b>
       </div>
-      <div style="margin-top:12px;font-size:13px;color:var(--text-secondary);">
-        Текущая конверсия: <b>${fmtPct(convRate)}</b> → целевая: <b>${fmtPct(targetConv)}</b>
-      </div>
+      ${potentialExtraUnits > 0 ? `
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;font-size:13px;">
+        Выполни рекомендации →
+        <b style="color:#059669;font-size:15px;">+${potentialExtraUnits} шт.</b>
+        <span style="color:var(--text-secondary);">(+${fmtMoney(potentialExtraRub)})</span>
+      </div>` : `
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px;font-size:14px;color:#059669;font-weight:600;">
+        Цель достигнута!
+      </div>`}
     </div>
-  `;
+  `);
 
   // ── Plan-fact by products ─────────────────────────────────────────
   const productFact = {};
